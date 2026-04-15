@@ -457,8 +457,25 @@ function saveHouse() {
   if(!data.name&&!data.rent){showToast('至少填写小区名或月租金');return;}
   // 编辑当前住所
   if(editId==='__baseline__'){
-    var bl={name:data.name,roomNum:data.roomNum,area:data.area,type:data.type,rent:data.rent,waterPrice:data.waterPrice,waterUsage:data.waterUsage,elecPrice:data.elecPrice,elecUsage:data.elecUsage,propFee:data.propFee,serviceFee:data.serviceFee,utility:data.utility,contractEnd:data.note};
+    var old=loadBaseline();
+    var bl={};
+    // 继承旧值作为基础，再用表单值覆盖
+    for(var k in old) bl[k]=old[k];
+    bl.name=data.name||old.name||'';
+    bl.roomNum=data.roomNum!==undefined?data.roomNum:old.roomNum;
+    bl.area=data.area||old.area||'';
+    bl.type=data.type||old.type||'';
+    bl.rent=data.rent||old.rent||'0';
+    bl.waterPrice=data.waterPrice!==undefined?data.waterPrice:old.waterPrice;
+    bl.waterUsage=data.waterUsage!==undefined?data.waterUsage:old.waterUsage;
+    bl.elecPrice=data.elecPrice!==undefined?data.elecPrice:old.elecPrice;
+    bl.elecUsage=data.elecUsage!==undefined?data.elecUsage:old.elecUsage;
+    bl.propFee=data.propFee!==undefined?data.propFee:old.propFee;
+    bl.serviceFee=data.serviceFee!==undefined?data.serviceFee:old.serviceFee;
+    bl.utility=data.utility||old.utility||'';
+    bl.contractEnd=data.note||old.contractEnd||'';
     var checks=loadChecks();
+    saveBaselineLocal(bl);
     syncSave(houses,checks,bl).then(function(){closeForm();renderBaseline();renderList();showToast('当前住所已更新');});
     return;
   }
@@ -500,6 +517,11 @@ function renderBaseline(){
   if(wp)det+=' · 水'+wp+'元/吨';
   if(b.contractEnd)det+=' · 合同'+b.contractEnd+'到期';
   document.getElementById('baselineDetail').innerHTML=det;
+  // 同步当前住所到云端（确保云端数据最新）
+  if(cloudEnabled){
+    var houses=loadData(),checks=loadChecks();
+    cloudPush({houses:houses,checks:checks,baseline:b,updatedAt:new Date().toISOString()}).then(function(){});
+  }
 }
 function editBaseline(){
   var b=loadBaseline();
@@ -616,26 +638,28 @@ function renderCompare() {
   var bTotal=parseFloat(b.rent)||0,bPp=parseFloat(b.propFee),bArea=parseFloat(b.area),bWp=parseFloat(b.waterPrice),bWu=parseFloat(b.waterUsage),bEp=parseFloat(b.elecPrice),bEu=parseFloat(b.elecUsage),bSvc=parseFloat(b.serviceFee);
   var bWc=(bWp&&bWu)?Math.round(bWp*bWu):0, bEc=(bEp&&bEu)?Math.round(bEp*bEu):0, bPc=(bPp&&bArea)?Math.round(bPp*bArea):0;
   var compareRows=[
-    ['月租金', b.rent?b.rent+' 元':'—', function(h){return h.rent?h.rent+' 元':'—';}],
-    ['物业费', bPc?bPc+' 元':'—', function(h){var p=parseFloat(h.propFee),a=parseFloat(h.area);return(p&&a)?Math.round(p*a)+' 元':'—';}],
-    ['水费', bWc?bWc+' 元':'—', function(h){var wp=parseFloat(h.waterPrice),wu=parseFloat(h.waterUsage);return(wp&&wu)?Math.round(wp*wu)+' 元':'—';}],
-    ['电费', bEc?bEc+' 元':'—', function(h){var ep=parseFloat(h.elecPrice),eu=parseFloat(h.elecUsage);return(ep&&eu)?Math.round(ep*eu)+' 元':'—';}],
-    ['服务费', bSvc?bSvc+' 元':'—', function(h){return h.serviceFee?h.serviceFee+' 元':'—';}],
+    ['月租金', b.rent?b.rent+' 元':'—', function(h){return h.rent?h.rent+' 元':'—';}, 'cost'],
+    ['物业费', bPc?bPc+' 元':'—', function(h){var p=parseFloat(h.propFee),a=parseFloat(h.area);return(p&&a)?Math.round(p*a)+' 元':'—';}, 'cost'],
+    ['水费', bWc?bWc+' 元':'—', function(h){var wp=parseFloat(h.waterPrice),wu=parseFloat(h.waterUsage);return(wp&&wu)?Math.round(wp*wu)+' 元':'—';}, 'cost'],
+    ['电费', bEc?bEc+' 元':'—', function(h){var ep=parseFloat(h.elecPrice),eu=parseFloat(h.elecUsage);return(ep&&eu)?Math.round(ep*eu)+' 元':'—';}, 'cost'],
+    ['服务费', bSvc?bSvc+' 元':'—', function(h){return h.serviceFee?h.serviceFee+' 元':'—';}, 'cost'],
     ['月总支出', CURRENT_COST.toLocaleString()+' 元', function(h){var t=parseFloat(h.total)||0;return t>0?t.toLocaleString()+' 元':'—';}, 'total'],
     ['水电类型', b.utility||'—', function(h){return h.utility||'—';}],
     ['面积', b.area?b.area+'㎡':'—', function(h){return h.area?h.area+'㎡':'—';}],
     ['户型', b.type||'—', function(h){return h.type||'—';}],
     ['楼层', '—', function(h){return h.floor||'—';}],
-    ['电梯', b.elevator||'—', function(h){return h.elevator||'—';}],
-    ['装修', '—', function(h){return h.decor||'—';}],
+    ['电梯', b.elevator||'—', function(h){return h.elevator||'—';}, 'good'],
+    ['装修', '—', function(h){return h.decor||'—';}, 'good'],
     ['朝向', '—', function(h){return h.direction||'—';}],
     ['押金', '—', function(h){return h.deposit||'—';}],
     ['租期', '—', function(h){return h.leaseTerm||'—';}],
     ['距石溪站', '—', function(h){return h.distance||'—';}],
-    ['评分', '—', function(h){return h.score?'⭐'+h.score+'/10':'—';}]
+    ['评分', '—', function(h){return h.score?'⭐'+h.score+'/10':'—';}, 'good']
   ];
   compareRows.forEach(function(row,i){
     var isTotal=(row[3]==='total');
+    var isCost=(row[3]==='cost'); // 费用类：越低越好
+    var isGood=(row[3]==='good'); // 品质类：有值=好
     var bg=isTotal?'background:#fef9e7;font-weight:700;font-size:14px':(i%2===1?'background:#fafbfc':'');
     html+='<tr style="'+bg+'"><td style="padding:8px;color:#888;border-bottom:1px solid #f5f5f5">'+row[0]+'</td>';
     html+='<td style="padding:8px;text-align:center;color:'+(isTotal?'#e74c3c':'#333')+';border-bottom:1px solid #f5f5f5">'+row[1]+'</td>';
@@ -643,12 +667,29 @@ function renderCompare() {
       var val=row[2](h);
       var cellStyle='padding:8px;text-align:center;border-bottom:1px solid #f5f5f5';
       var cellColor='#333';
+      var cellBg='';
       if(isTotal){
         var t=parseFloat(h.total)||0;
-        if(t>0&&t<CURRENT_COST){cellColor='var(--green)';}
-        else if(t>0){cellColor='var(--red)';}
+        if(t>0&&t<CURRENT_COST){cellColor='var(--green)';cellBg='background:#eafaf1';}
+        else if(t>0){cellColor='var(--red)';cellBg='background:#fdedec';}
+      } else if(isCost){
+        // 费用类：有值时和当前住所对比，低=绿 高=红
+        var hv=parseFloat(row[2](h))||0;
+        var bv=parseFloat(String(row[1]).replace(/[^\d.]/g,''))||0;
+        if(hv>0 && bv>0){
+          if(hv<bv){cellColor='var(--green)';cellBg='background:#eafaf1';}
+          else if(hv>bv){cellColor='var(--red)';cellBg='background:#fdedec';}
+        }
+      } else if(isGood){
+        // 品质类：当前住所"无"时，房源有值=绿；当前住所"有"时，房源无值=红
+        var bVal=row[1];
+        if(bVal==='无'||bVal==='—'){
+          if(val&&val!=='—'&&val!=='无'){cellColor='var(--green)';cellBg='background:#eafaf1';}
+        } else {
+          if(!val||val==='—'||val==='无'){cellColor='var(--red)';cellBg='background:#fdedec';}
+        }
       }
-      html+='<td style="'+cellStyle+';color:'+cellColor+'">'+val+'</td>';
+      html+='<td style="'+cellStyle+';color:'+cellColor+';'+cellBg+'">'+val+'</td>';
     });
     html+='</tr>';
   });
