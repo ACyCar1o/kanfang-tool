@@ -315,7 +315,7 @@
     <div class="sub">石溪地铁站 · 2026年5月搬迁</div>
     <div class="stats">
       <div class="stat-box current">
-        <span class="num" id="statCurrent">4,160</span>
+        <span class="num" id="statCurrent">4,160</span><!-- 当前：房租3300+服务费260+物业210+水电约390 -->
         当前月支出（元）
       </div>
       <div class="stat-box">
@@ -343,7 +343,7 @@
       <div class="label">📌 当前住所（参照基准）</div>
       <div class="name">绿地汇金楼 · 60㎡ 一房一厅</div>
       <div class="amount">4,160 <small>元/月</small></div>
-      <div class="detail">房租3,300 + 服务费260 + 物业费210 + 水电≈390<br>商水商电 · 电0.8元/度 · 合同5月31日到期</div>
+      <div class="detail">房租3,300 + 服务费260 + 物业费210(3.5×60㎡) + 水电约390<br>商水商电 · 电0.8元/度 · 合同5月31日到期</div>
     </div>
     <div class="house-list" id="houseList">
       <div class="empty-state" id="emptyState">
@@ -474,29 +474,36 @@
         </div>
         <div class="form-half">
           <div class="form-row">
-            <label class="form-label">水电类型</label>
-            <select class="form-input" id="fUtility">
-              <option value="">请选择</option>
-              <option value="民水民电">民水民电</option>
-              <option value="商水商电">商水商电</option>
-              <option value="民水商电">民水商电</option>
-              <option value="不确定">不确定</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label class="form-label">电费单价（元/度）</label>
-            <input class="form-input" id="fElecPrice" type="number" step="0.01" placeholder="0.6">
-          </div>
-        </div>
-        <div class="form-half">
-          <div class="form-row">
             <label class="form-label">服务费（元/月）</label>
             <input class="form-input" id="fServiceFee" type="number" placeholder="0">
           </div>
           <div class="form-row">
-            <label class="form-label">物业费（元/月）</label>
-            <input class="form-input" id="fPropFee" type="number" placeholder="0">
+            <label class="form-label">物业费</label>
+            <input class="form-input" id="fPropFee" type="number" step="0.1" placeholder="0">
           </div>
+        </div>
+        <div class="form-row" style="margin-top:-6px">
+          <label class="form-label" style="font-size:11px;color:#aaa">物业费单位：直接填月费（如210），或填单价（如3.5）</label>
+        </div>
+        <div class="form-half">
+          <div class="form-row">
+            <label class="form-label">每月水电费（元）</label>
+            <input class="form-input" id="fWaterElec" type="number" placeholder="如：400">
+          </div>
+          <div class="form-row">
+            <label class="form-label">电费单价（元/度）</label>
+            <input class="form-input" id="fElecPrice" type="number" step="0.01" placeholder="如：0.8">
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">水电类型</label>
+          <select class="form-input" id="fUtility">
+            <option value="">请选择</option>
+            <option value="民水民电">民水民电</option>
+            <option value="商水商电">商水商电</option>
+            <option value="民水商电">民水商电</option>
+            <option value="不确定">不确定</option>
+          </select>
         </div>
         <div class="form-half">
           <div class="form-row">
@@ -516,7 +523,7 @@
         </div>
         <div class="form-row">
           <label class="form-label">预估月总支出（元）</label>
-          <input class="form-input" id="fTotal" type="number" placeholder="填房租后自动算，也可手动改">
+          <input class="form-input" id="fTotal" type="number" placeholder="= 房租 + 服务费 + 物业费 + 水电费">
         </div>
       </div>
 
@@ -645,20 +652,23 @@
     function autoCalc() {
       const rent = parseFloat(document.getElementById('fRent').value) || 0;
       const svc = parseFloat(document.getElementById('fServiceFee').value) || 0;
-      const prop = parseFloat(document.getElementById('fPropFee').value) || 0;
-      // 水电估算：民水民电约100，商水商电约250
-      const util = document.getElementById('fUtility').value;
-      let utilEst = 150;
-      if (util === '民水民电') utilEst = 100;
-      else if (util === '商水商电') utilEst = 250;
-      const total = rent + svc + prop + utilEst;
+      const propRaw = parseFloat(document.getElementById('fPropFee').value) || 0;
+      // 物业费：如果填的数字大于50，视为月费；否则视为元/㎡/月，乘以面积
+      const area = parseFloat(document.getElementById('fArea').value) || 0;
+      let prop = propRaw;
+      if (propRaw > 0 && propRaw <= 50 && area > 0) {
+        prop = Math.round(propRaw * area);
+      }
+      // 水电费：直接用用户填的金额，不估算
+      const util = parseFloat(document.getElementById('fWaterElec').value) || 0;
+      const total = rent + svc + prop + util;
       const fTotal = document.getElementById('fTotal');
       if (!fTotal.value || fTotal.dataset.auto === '1') {
         fTotal.value = total || '';
         fTotal.dataset.auto = '1';
       }
     }
-    ['fRent', 'fServiceFee', 'fPropFee', 'fUtility'].forEach(id => {
+    ['fRent', 'fServiceFee', 'fPropFee', 'fWaterElec', 'fArea'].forEach(id => {
       document.getElementById(id).addEventListener('input', autoCalc);
       document.getElementById(id).addEventListener('change', autoCalc);
     });
@@ -683,6 +693,7 @@
         document.getElementById('fRent').value = h.rent || '';
         document.getElementById('fUtility').value = h.utility || '';
         document.getElementById('fElecPrice').value = h.elecPrice || '';
+        document.getElementById('fWaterElec').value = h.waterElec || '';
         document.getElementById('fServiceFee').value = h.serviceFee || '';
         document.getElementById('fPropFee').value = h.propFee || '';
         document.getElementById('fDeposit').value = h.deposit || '';
@@ -725,6 +736,7 @@
         rent: document.getElementById('fRent').value.trim(),
         utility: document.getElementById('fUtility').value,
         elecPrice: document.getElementById('fElecPrice').value.trim(),
+        waterElec: document.getElementById('fWaterElec').value.trim(),
         serviceFee: document.getElementById('fServiceFee').value.trim(),
         propFee: document.getElementById('fPropFee').value.trim(),
         deposit: document.getElementById('fDeposit').value,
@@ -893,6 +905,7 @@
         const rows = [
           ['月租金', `${h.rent ? h.rent + ' 元' : '—'}`],
           ['水电类型', h.utility || '—', h.utility === '民水民电' ? 'good' : (h.utility === '商水商电' ? 'bad' : '')],
+          ['每月水电费', h.waterElec ? h.waterElec + ' 元' : '—'],
           ['电费单价', h.elecPrice ? h.elecPrice + ' 元/度' : '—'],
           ['服务费', h.serviceFee ? h.serviceFee + ' 元/月' : '无'],
           ['物业费', h.propFee ? h.propFee + ' 元/月' : '无'],
