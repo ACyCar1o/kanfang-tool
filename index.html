@@ -557,8 +557,9 @@ function renderCompare() {
   // 按排序序号排列
   var sorted=active.slice().sort(function(x,y){return(parseInt(x.sortOrder)||999)-(parseInt(y.sortOrder)||999)});
   var html='';
-  // 最低价提示
-  var cheapest=sorted[0];
+  // 最低价提示（按月总支出从低到高排序）
+  var byCost=sorted.slice().sort(function(x,y){return(parseFloat(x.total)||Infinity)-(parseFloat(y.total)||Infinity)});
+  var cheapest=byCost[0];
   if(cheapest&&parseFloat(cheapest.total)>0){
     html+='<div class="save-amount positive">💰 最低月支出：<strong>'+cheapest.name+'</strong><br>仅 <strong>'+parseFloat(cheapest.total).toLocaleString()+'</strong> 元/月</div>';
   }
