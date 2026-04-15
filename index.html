@@ -32,10 +32,11 @@
     .tag-green{background:var(--green-bg);color:#1a9c54}.tag-blue{background:var(--blue-bg);color:#2471a3}
     .tag-orange{background:var(--orange-bg);color:#b7950b}.tag-red{background:var(--red-bg);color:#c0392b}
     .tag-gray{background:var(--gray-bg);color:#777}
-    .tag-booked{background:#eafaf1;color:#1a9c54}
-    .tag-living{background:var(--red-bg);color:#c0392b}
-    .tag-rejected{background:var(--gray-bg);color:#777}
-    .tag-viewing{background:var(--blue-bg);color:#2471a3}
+    .status-dot{display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;font-weight:500;line-height:1.6;vertical-align:middle;margin-left:6px}
+    .status-dot.living{background:#fde8e8;color:#c0392b}
+    .status-dot.booked{background:#e8f8ef;color:#1a9c54}
+    .status-dot.rejected{background:#f0f0f0;color:#aaa}
+    .status-dot.viewing{background:#e8f4fd;color:#2980b9}
     .house-card-note{padding:10px 16px;font-size:13px;color:#666;border-top:1px solid #f0f0f0;line-height:1.6}
     .empty-state{text-align:center;padding:60px 20px;color:#bbb}.empty-state .icon{font-size:48px;margin-bottom:12px}.empty-state p{font-size:14px;margin-bottom:20px}
     .form-page{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#f0f2f5;z-index:200;overflow-y:auto}
@@ -514,14 +515,14 @@ function renderList() {
     var estLine='';
     if(est.total>0 && total===0) estLine='📊 自动预估';
     else if(est.total>0 && total>0) estLine='（系统估算 ~'+est.total.toLocaleString()+' 元）';
-    // 状态标签
-    var statusTag='';
-    if(h.status==='living') statusTag='<span class="tag tag-living">🏠 居住中</span>';
-    else if(h.status==='booked') statusTag='<span class="tag tag-booked">✅ 已预定</span>';
-    else if(h.status==='rejected') statusTag='<span class="tag tag-rejected">❌ 不考虑</span>';
-    else statusTag='<span class="tag tag-viewing">🔍 考虑中</span>';
-    // 其他标签
-    var tags=statusTag;
+    // 状态小标签
+    var statusDot='';
+    if(h.status==='living') statusDot='<span class="status-dot living">居住中</span>';
+    else if(h.status==='booked') statusDot='<span class="status-dot booked">预定</span>';
+    else if(h.status==='rejected') statusDot='<span class="status-dot rejected">不考虑</span>';
+    else statusDot='<span class="status-dot viewing">考虑中</span>';
+    // 其他标签（不含状态）
+    var tags='';
     if(h.utility==='民水民电')tags+='<span class="tag tag-green">民水民电</span>';
     else if(h.utility==='商水商电')tags+='<span class="tag tag-red">商水商电</span>';
     else if(h.utility)tags+='<span class="tag tag-orange">'+h.utility+'</span>';
@@ -557,7 +558,7 @@ function renderList() {
     card.innerHTML='<div class="house-card-header"><div style="display:flex;align-items:center">'
       +(h.sortOrder?'<span class="card-sort-num">'+h.sortOrder+'</span>':'')
       +'<div><div class="name">'+title+'</div></div></div>'
-      +'<div style="text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small></div>'
+      +'<div style="text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small>'+statusDot+'</div>'
       +(estLine?'<div style="font-size:11px;color:#aaa">'+estLine+'</div>':'')+'</div></div>'
       +(tags?'<div class="house-card-tags">'+tags+'</div>':'')
       +(other?'<div class="house-card-note">'+other+'</div>':'')
