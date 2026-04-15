@@ -36,6 +36,15 @@
     .empty-state{text-align:center;padding:60px 20px;color:#bbb}.empty-state .icon{font-size:48px;margin-bottom:12px}.empty-state p{font-size:14px;margin-bottom:20px}
     .form-page{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#f0f2f5;z-index:200;overflow-y:auto}
     .form-page.show{display:block}
+    .detail-section{background:#fff;border-radius:12px;margin-bottom:12px;overflow:hidden}
+    .detail-section-title{font-size:13px;font-weight:700;color:#333;padding:12px 16px 6px;background:#fafafa;border-bottom:1px solid #f0f0f0}
+    .detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:13px;border-bottom:1px solid #f8f8f8}
+    .detail-row:last-child{border-bottom:none}
+    .detail-label{color:#999;flex-shrink:0}
+    .detail-value{color:#333;text-align:right;font-weight:500;word-break:break-all;max-width:60%}
+    .detail-value.cost{color:var(--red);font-weight:700;font-size:15px}
+    .detail-value.good{color:var(--green);font-weight:600}
+    .detail-value.bad{color:var(--red)}
     .form-header{background:#fff;padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
     .form-header .back{background:none;border:none;font-size:16px;color:var(--green);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:4px}
     .form-header .save{background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:600;cursor:pointer}
@@ -149,6 +158,15 @@
   </div></div></div>
 
   <button class="fab" id="fabAdd" onclick="openForm()">＋</button>
+
+  <!-- 详情弹窗 -->
+  <div class="form-page" id="detailPage">
+    <div class="form-header">
+      <button class="back" onclick="closeDetail()">← 返回</button>
+      <span class="title">房源详情</span>
+    </div>
+    <div id="detailContent" style="padding:16px;overflow-y:auto;flex:1"></div>
+  </div>
 
   <!-- 编辑表单 -->
   <div class="form-page" id="formPage">
@@ -367,6 +385,78 @@ function setStatus(id, status) {
   syncSave(houses,checks).then(function(){renderList();showToast('状态已更新');});
 }
 
+// === 详情弹窗 ===
+function openDetail(id) {
+  var houses=loadData(), h=null;
+  houses.forEach(function(x){if(x.id===id)h=x;});
+  if(!h)return;
+  var c=document.getElementById('detailContent');
+  // 费用计算
+  var rent=parseFloat(h.rent)||0, propFee=Math.round((parseFloat(h.propFee)||0)*(parseFloat(h.area)||0)), serviceFee=parseFloat(h.serviceFee)||0;
+  var waterFee=Math.round((parseFloat(h.waterPrice)||0)*(parseFloat(h.waterUsage)||0)), elecFee=Math.round((parseFloat(h.elecPrice)||0)*(parseFloat(h.elecUsage)||0));
+  var total=rent+propFee+serviceFee+waterFee+elecFee;
+  var html='';
+  // 头部信息
+  html+='<div style="background:var(--green);color:#fff;padding:20px 16px;border-radius:12px;margin-bottom:12px">';
+  html+='<div style="font-size:20px;font-weight:800">'+(h.name||'未命名')+'</div>';
+  html+='<div style="font-size:28px;font-weight:900;margin-top:8px">'+(total>0?total.toLocaleString()+'<span style="font-size:14px;font-weight:400"> 元/月</span>':'未填写总支出')+'</div>';
+  if(h.type||h.area) html+='<div style="font-size:13px;opacity:.8;margin-top:4px">'+[h.type,h.area?h.area+'㎡':''].filter(Boolean).join(' · ')+'</div>';
+  html+='</div>';
+  // 费用明细
+  html+='<div class="detail-section"><div class="detail-section-title">💰 费用明细</div>';
+  var rows=[
+    ['月租金',h.rent?h.rent+' 元':'—','cost'],
+    ['物业费',(parseFloat(h.propFee)&&parseFloat(h.area))?Math.round(h.propFee*h.area)+' 元 ('+h.propFee+'元/㎡)':'—',''],
+    ['水费',(parseFloat(h.waterPrice)&&parseFloat(h.waterUsage))?waterFee+' 元 ('+h.waterPrice+'元×'+h.waterUsage+'吨)':'—',''],
+    ['电费',(parseFloat(h.elecPrice)&&parseFloat(h.elecUsage))?elecFee+' 元 ('+h.elecPrice+'元×'+h.elecUsage+'度)':'—',''],
+    ['服务费',h.serviceFee?h.serviceFee+' 元':'—',''],
+    ['月总支出',total>0?total.toLocaleString()+' 元':'—','cost']
+  ];
+  rows.forEach(function(r){
+    html+='<div class="detail-row"><span class="detail-label">'+r[0]+'</span><span class="detail-value '+(r[2]||'')+'">'+r[1]+'</span></div>';
+  });
+  html+='</div>';
+  // 房屋信息
+  html+='<div class="detail-section"><div class="detail-section-title">🏠 房屋信息</div>';
+  var infoRows=[
+    ['水电类型',h.utility,h.utility==='民水民电'?'good':(h.utility==='商水商电'?'bad':'')],
+    ['装修',h.decor,''],
+    ['电梯',h.elevator,h.elevator==='有电梯'?'good':''],
+    ['楼层',h.floor?h.floor+'层':'—',''],
+    ['朝向',h.direction,''],
+    ['面积',h.area?h.area+'㎡':'—',''],
+    ['户型',h.type||'—',''],
+    ['押金方式',h.deposit,''],
+    ['租期',h.leaseTerm||'—',''],
+    ['评分',h.score?'⭐ '+h.score+'/10':'—','']
+  ];
+  infoRows.forEach(function(r){
+    var v=r[1]||'—';
+    html+='<div class="detail-row"><span class="detail-label">'+r[0]+'</span><span class="detail-value '+(r[2]||'')+'">'+v+'</span></div>';
+  });
+  html+='</div>';
+  // 其他信息
+  var otherHtml='';
+  if(h.distance) otherHtml+='<div class="detail-row"><span class="detail-label">📍 距石溪站</span><span class="detail-value">'+h.distance+'</span></div>';
+  if(h.appliance) otherHtml+='<div class="detail-row"><span class="detail-label">🔌 家电</span><span class="detail-value">'+h.appliance+'</span></div>';
+  if(h.pros) otherHtml+='<div class="detail-row"><span class="detail-label">✅ 优点</span><span class="detail-value good">'+h.pros+'</span></div>';
+  if(h.cons) otherHtml+='<div class="detail-row"><span class="detail-label">❌ 缺点</span><span class="detail-value bad">'+h.cons+'</span></div>';
+  if(h.visitDate) otherHtml+='<div class="detail-row"><span class="detail-label">🕐 看房日期</span><span class="detail-value">'+h.visitDate+'</span></div>';
+  if(h.contact) otherHtml+='<div class="detail-row"><span class="detail-label">📞 联系方式</span><span class="detail-value">'+h.contact+'</span></div>';
+  if(h.note) otherHtml+='<div class="detail-row"><span class="detail-label">📝 备注</span><span class="detail-value">'+h.note+'</span></div>';
+  if(h.agentFee) otherHtml+='<div class="detail-row"><span class="detail-label">🏷️ 中介费</span><span class="detail-value">'+h.agentFee+'</span></div>';
+  if(otherHtml) html+='<div class="detail-section"><div class="detail-section-title">📋 其他信息</div>'+otherHtml+'</div>';
+  // 底部编辑按钮
+  html+='<div style="padding:12px 0"><button style="width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer" onclick="closeDetail();openForm(\''+h.id+'\')">✏️ 编辑此房源</button></div>';
+  c.innerHTML=html;
+  document.getElementById('detailPage').classList.add('show');
+  document.getElementById('fabAdd').style.display='none';
+}
+function closeDetail() {
+  document.getElementById('detailPage').classList.remove('show');
+  document.getElementById('fabAdd').style.display='flex';
+}
+
 // === 表单 ===
 function openForm(id) {
   var houses = loadData();
@@ -543,7 +633,11 @@ function renderList() {
       +(estLine?'<div style="font-size:11px;color:#aaa">'+estLine+'</div>':'')+'</div></div>'
       +(tags||statusTag?'<div class="house-card-tags">'+statusTag+tags+'</div>':'')
       +(other?'<div class="house-card-note">'+other+'</div>':'')
-      +'<div style="padding:0 16px 12px;display:flex;gap:8px;justify-content:flex-end"><button style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer" onclick="openForm(\''+h.id+'\')">编辑</button><button style="background:#fff;color:var(--red);border:1px solid var(--red);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;margin-left:6px" onclick="deleteHouse(\''+h.id+'\')">删除</button></div>';
+      +'<div style="padding:0 16px 12px;display:flex;gap:8px;justify-content:flex-end"><button style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer" onclick="event.stopPropagation();openForm(\''+h.id+'\')">编辑</button><button style="background:#fff;color:var(--red);border:1px solid var(--red);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;margin-left:6px" onclick="event.stopPropagation();deleteHouse(\''+h.id+'\')">删除</button></div>';
+    card.addEventListener('click',function(e){
+      if(e.target.closest('select')||e.target.closest('button'))return;
+      openDetail(h.id);
+    });
     container.appendChild(card);
   });
 }
