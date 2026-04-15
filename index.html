@@ -98,9 +98,9 @@
     <div class="sub">石溪地铁站 · 2026年5月搬迁 · ☁️ 云同步版</div>
     <div class="stats">
       <div class="stat-box"><span class="num" id="statCount">0</span>已看（套）</div>
-      <div class="stat-box"><span class="num" id="statLiving" style="color:#ffcccc">0</span>居住中</div>
-      <div class="stat-box"><span class="num" id="statBooked" style="color:#ccf0d9">0</span>已预定</div>
-      <div class="stat-box"><span class="num" id="statRejected" style="color:#ddd">0</span>不考虑</div>
+      <div class="stat-box"><span class="num" id="statLiving" style="color:#e74c3c">0</span>居住中</div>
+      <div class="stat-box"><span class="num" id="statBooked" style="color:#e67e22">0</span>意向中</div>
+      <div class="stat-box"><span class="num" id="statRejected" style="color:#bbb">0</span>不考虑</div>
     </div>
   </div>
   <div class="tabs">
@@ -114,7 +114,7 @@
       <div class="empty-state" id="emptyState"><div class="icon">📝</div><p>还没记录任何房源<br>点击右下角 ＋ 添加第一套</p></div>
     </div>
   </div>
-  <div class="tab-content" id="tab-compare"><div id="compareContent"><div class="empty-state"><div class="icon">📊</div><p>至少添加 2 套「看房中」或「已预定」的房源才能对比</p></div></div></div>
+  <div class="tab-content" id="tab-compare"><div id="compareContent"><div class="empty-state"><div class="icon">📊</div><p>至少添加 2 套房源才能对比<br>标记为"不考虑"的房源已自动排除</p></div></div></div>
   <div class="tab-content" id="tab-checklist">
     <div class="check-progress"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:15px;font-weight:700">核查进度</span><span class="progress-text" id="progressText">0 / 21 项</span></div><div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div></div>
     <div class="check-section">
@@ -181,7 +181,7 @@
         <div class="form-group-title">🏷️ 排序与状态</div>
         <div class="form-half">
           <div class="form-row"><label class="form-label">排序序号<span style="font-size:11px;color:#aaa;font-weight:400">（数字越小越靠前）</span></label><input class="form-input" id="fSortOrder" type="number" placeholder="自动" min="1"></div>
-          <div class="form-row"><label class="form-label">状态</label><select class="form-input" id="fStatus"><option value="viewing">🔍 考虑中</option><option value="living">🏠 居住中</option><option value="booked">✅ 已预定</option><option value="rejected">❌ 不考虑</option></select></div>
+          <div class="form-row"><label class="form-label">状态</label><select class="form-input" id="fStatus"><option value="viewing">🔍 考虑中</option><option value="living">🏠 居住中</option><option value="booked">⭐ 意向中</option><option value="rejected">❌ 不考虑</option></select></div>
         </div>
       </div>
       <div class="form-group">
@@ -608,12 +608,12 @@ function renderList() {
     if(h.floor)tags+='<span class="tag tag-gray">'+h.floor+'层</span>';
     if(h.score){var sc=parseInt(h.score)>=8?'tag-green':(parseInt(h.score)>=6?'tag-blue':'tag-orange');tags+='<span class="tag '+sc+'">⭐'+h.score+'</span>';}
     // 状态标签（放在标签行最前面）
-    var statusMap={viewing:{label:'考虑中',cls:'tag-blue'},living:{label:'居住中',cls:'tag-red'},booked:{label:'已预定',cls:'tag-green'},rejected:{label:'不考虑',cls:'tag-gray'}};
+    var statusMap={viewing:{label:'考虑中',cls:'tag-blue'},living:{label:'居住中',cls:'tag-red'},booked:{label:'意向中',cls:'tag-orange'},rejected:{label:'不考虑',cls:'tag-gray'}};
     var st=statusMap[h.status]||statusMap.viewing;
     var statusTag='<select class="card-status-select" onchange="setStatus(\''+h.id+'\',this.value)" style="margin-right:2px">'
       +'<option value="viewing"'+(h.status==='viewing'||!h.status?' selected':'')+'>🔍 考虑中</option>'
       +'<option value="living"'+(h.status==='living'?' selected':'')+'>🏠 居住中</option>'
-      +'<option value="booked"'+(h.status==='booked'?' selected':'')+'>✅ 已预定</option>'
+      +'<option value="booked"'+(h.status==='booked'?' selected':'')+'>⭐ 意向中</option>'
       +'<option value="rejected"'+(h.status==='rejected'?' selected':'')+'>❌ 不考虑</option>'
       +'</select>';
     // 其他内容
@@ -647,7 +647,7 @@ function renderCompare() {
   var houses=loadData(),container=document.getElementById('compareContent');
   // 过滤掉不考虑的
   var active=houses.filter(function(h){return h.status!=='rejected';});
-  if(active.length<2){container.innerHTML='<div class="empty-state"><div class="icon">📊</div><p>至少添加 2 套「看房中」或「已预定」的房源才能对比<br>标记为"不考虑"的房源已自动排除</p></div>';return;}
+  if(active.length<2){container.innerHTML='<div class="empty-state"><div class="icon">📊</div><p>至少添加 2 套房源才能对比<br>标记为"不考虑"的房源已自动排除</p></div>';return;}
   // 按排序序号排列
   var sorted=active.slice().sort(function(x,y){return(parseInt(x.sortOrder)||999)-(parseInt(y.sortOrder)||999)});
   var html='';
@@ -680,7 +680,7 @@ function renderCompare() {
     ['租期', function(h){return h.leaseTerm||'—';}, 'info'],
     ['距石溪站', function(h){return h.distance||'—';}, 'info'],
     ['评分', function(h){return h.score?'⭐'+h.score+'/10':'—';}, 'score'],
-    ['状态', function(h){return h.status==='living'?'🏠 居住中':(h.status==='booked'?'✅ 已预定':(h.status==='viewing'?'🔍 考虑中':'❌ 不考虑'));}, 'info']
+    ['状态', function(h){return h.status==='living'?'🏠 居住中':(h.status==='booked'?'⭐ 意向中':(h.status==='viewing'?'🔍 考虑中':'❌ 不考虑'));}, 'info']
   ];
   compareRows.forEach(function(row,i){
     var type=row[2]||'info';
