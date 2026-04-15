@@ -532,17 +532,18 @@ function renderList() {
     if(h.contact)other+='<div style="font-size:12px;color:#888;margin-top:2px">📞 '+h.contact+'</div>';
     if(h.visitDate)other+='<div style="font-size:12px;color:#888">🕐 '+h.visitDate+'</div>';
 
-    card.innerHTML='<div class="house-card-header" style="position:relative;flex-wrap:wrap;gap:4px">'
+    card.innerHTML='<div class="house-card-header">'
       +(h.sortOrder?'<span class="card-sort-num">'+h.sortOrder+'</span>':'')
       +'<div class="name">'+title+'</div>'
-      +'<select class="card-status-select s-'+(h.status||'viewing')+'" onchange="setStatus(\''+h.id+'\',this.value);event.stopPropagation()">'
+      +'<div style="text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small></div>'
+      +(estLine?'<div style="font-size:11px;color:#aaa">'+estLine+'</div>':'')+'</div></div>'
+      +'<div style="padding:0 16px 4px">'
+      +'<select class="card-status-select s-'+(h.status||'viewing')+'" onchange="setStatus(\''+h.id+'\',this.value)">'
       +'<option value="viewing"'+(h.status==='viewing'||!h.status?' selected':'')+'>考虑中</option>'
       +'<option value="living"'+(h.status==='living'?' selected':'')+'>居住中</option>'
       +'<option value="booked"'+(h.status==='booked'?' selected':'')+'>预定</option>'
       +'<option value="rejected"'+(h.status==='rejected'?' selected':'')+'>不考虑</option>'
-      +'</select>'
-      +'</div><div style="text-align:right;padding:0 16px 10px"><div class="price">'+displayTotal+'<small> 元/月</small></div>'
-      +(estLine?'<div style="font-size:11px;color:#aaa">'+estLine+'</div>':'')+'</div></div>'
+      +'</select></div>'
       +(tags?'<div class="house-card-tags">'+tags+'</div>':'')
       +(other?'<div class="house-card-note">'+other+'</div>':'')
       +'<div style="padding:0 16px 12px;display:flex;gap:8px;justify-content:flex-end"><button style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer" onclick="openForm(\''+h.id+'\')">编辑</button><button style="background:#fff;color:var(--red);border:1px solid var(--red);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;margin-left:6px" onclick="deleteHouse(\''+h.id+'\')">删除</button></div>';
