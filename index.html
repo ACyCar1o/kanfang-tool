@@ -47,6 +47,8 @@
     select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
     .compare-card{background:#fff;border-radius:12px;padding:16px;margin:12px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
     .compare-card h3{font-size:14px;color:#888;margin-bottom:12px}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    table th,table td{white-space:nowrap}
     .compare-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:14px}
     .compare-row:last-child{border-bottom:none}.compare-row .label{color:#888}.compare-row .val{font-weight:600;color:var(--dark);text-align:right;max-width:60%}
     .compare-row .val.good{color:var(--green)}.compare-row .val.bad{color:var(--red)}
@@ -596,24 +598,68 @@ function renderList() {
 function renderCompare() {
   var houses=loadData(),container=document.getElementById('compareContent');
   if(houses.length===0){container.innerHTML='<div class="empty-state"><div class="icon">📊</div><p>至少添加 1 套房源后才能对比</p></div>';return;}
+  var b=loadBaseline();
   var sorted=houses.slice().sort(function(a,b){return(parseFloat(a.total)||99999)-(parseFloat(b.total)||99999)});
   var html='';
+  // 最佳选择提示
   var best=sorted.find(function(h){return(parseFloat(h.total)||99999)<CURRENT_COST});
-  if(best){var sv=CURRENT_COST-(parseFloat(best.total)||0);html+='<div class="save-amount positive">💰 最佳选择：'+best.name+'<br>每月省 <strong>'+sv.toLocaleString()+'</strong> 元<small>，一年省 '+(sv*12).toLocaleString()+' 元</small></div>';}
-  sorted.forEach(function(h){
-    var total=parseFloat(h.total)||0,save=total>0?CURRENT_COST-total:0;
-    html+='<div class="compare-card"><h3>'+(h.name||'未命名')+(h.score?' · ⭐ '+h.score+'/10':'')+'</h3>';
-    var rows=[['月租金',h.rent?h.rent+' 元':'\u2014'],['水电类型',h.utility||'\u2014',h.utility==='民水民电'?'good':(h.utility==='商水商电'?'bad':'')],['电费',(h.elecPrice&&h.elecUsage)?h.elecPrice+'×'+h.elecUsage+'度='+Math.round(parseFloat(h.elecPrice)*parseFloat(h.elecUsage))+'元':(h.elecPrice?h.elecPrice+' 元/度':'\u2014')],['水费',(h.waterPrice&&h.waterUsage)?h.waterPrice+'×'+h.waterUsage+'吨='+Math.round(parseFloat(h.waterPrice)*parseFloat(h.waterUsage))+'元':(h.waterPrice?h.waterPrice+' 元/吨':'\u2014')],['物业费',(h.propFee&&h.area)?h.propFee+'×'+h.area+'㎡='+Math.round(parseFloat(h.propFee)*parseFloat(h.area))+'元':'\u2014'],['服务费',h.serviceFee?h.serviceFee+' 元/月':'无'],['预估月总支出',total>0?total.toLocaleString()+' 元':'\u2014'],['距石溪站',h.distance||'\u2014'],['面积',h.area?h.area+'㎡':'\u2014'],['户型',h.type||'\u2014'],['楼层',h.floor||'\u2014'],['电梯',h.elevator||'\u2014'],['装修',h.decor||'\u2014'],['朝向',h.direction||'\u2014'],['押金',h.deposit||'\u2014'],['中介费',h.agentFee||'无']];
-    rows.forEach(function(r){html+='<div class="compare-row"><span class="label">'+r[0]+'</span><span class="val '+(r[2]||'')+'">'+r[1]+'</span></div>';});
-    if(h.pros||h.cons){html+='<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;font-size:13px;line-height:1.8">';if(h.pros)html+='<span style="color:#1a9c54">✅ '+h.pros+'</span><br>';if(h.cons)html+='<span style="color:#c0392b">❌ '+h.cons+'</span>';html+='</div>';}
-    html+='<div style="margin-top:10px;text-align:right;font-size:14px;font-weight:700;color:'+(save>0?'var(--green)':(total>0?'var(--red)':'#ccc'))+'">'+(save>0?'✅ 每月省 '+save.toLocaleString()+' 元':(total>0?'❌ 比现在贵 '+Math.abs(save).toLocaleString()+' 元':''))+'</div></div>';
+  if(best){var sv=CURRENT_COST-(parseFloat(best.total)||0);html+='<div class="save-amount positive">💰 最佳选择：'+(best.name||'未命名')+'<br>比现在每月省 <strong>'+sv.toLocaleString()+'</strong> 元<small>，一年省 '+(sv*12).toLocaleString()+' 元</small></div>';}
+  // 对比表格：左侧当前住所 vs 右侧各房源
+  html+='<div style="padding:0 12px;margin-bottom:12px"><table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06)">';
+  html+='<thead><tr style="background:#f8f9fa"><th style="padding:10px 8px;text-align:left;font-size:12px;color:#999;border-bottom:1px solid #eee;width:28%">对比项</th>';
+  html+='<th style="padding:10px 8px;text-align:center;font-size:12px;color:#e74c3c;border-bottom:1px solid #eee;font-weight:700">🏢 当前住所</th>';
+  sorted.forEach(function(h){html+='<th style="padding:10px 6px;text-align:center;font-size:12px;color:var(--green);border-bottom:1px solid #eee;font-weight:600">'+(h.name?h.name.substring(0,4):'未命名')+'</th>';});
+  html+='</tr></thead><tbody>';
+  // 对比行
+  var bTotal=parseFloat(b.rent)||0,bPp=parseFloat(b.propFee),bArea=parseFloat(b.area),bWp=parseFloat(b.waterPrice),bWu=parseFloat(b.waterUsage),bEp=parseFloat(b.elecPrice),bEu=parseFloat(b.elecUsage),bSvc=parseFloat(b.serviceFee);
+  var bWc=(bWp&&bWu)?Math.round(bWp*bWu):0, bEc=(bEp&&bEu)?Math.round(bEp*bEu):0, bPc=(bPp&&bArea)?Math.round(bPp*bArea):0;
+  var compareRows=[
+    ['月租金', b.rent?b.rent+' 元':'—', function(h){return h.rent?h.rent+' 元':'—';}],
+    ['物业费', bPc?bPc+' 元':'—', function(h){var p=parseFloat(h.propFee),a=parseFloat(h.area);return(p&&a)?Math.round(p*a)+' 元':'—';}],
+    ['水费', bWc?bWc+' 元':'—', function(h){var wp=parseFloat(h.waterPrice),wu=parseFloat(h.waterUsage);return(wp&&wu)?Math.round(wp*wu)+' 元':'—';}],
+    ['电费', bEc?bEc+' 元':'—', function(h){var ep=parseFloat(h.elecPrice),eu=parseFloat(h.elecUsage);return(ep&&eu)?Math.round(ep*eu)+' 元':'—';}],
+    ['服务费', bSvc?bSvc+' 元':'—', function(h){return h.serviceFee?h.serviceFee+' 元':'—';}],
+    ['月总支出', CURRENT_COST.toLocaleString()+' 元', function(h){var t=parseFloat(h.total)||0;return t>0?t.toLocaleString()+' 元':'—';}, 'total'],
+    ['水电类型', b.utility||'—', function(h){return h.utility||'—';}],
+    ['面积', b.area?b.area+'㎡':'—', function(h){return h.area?h.area+'㎡':'—';}],
+    ['户型', b.type||'—', function(h){return h.type||'—';}],
+    ['楼层', '—', function(h){return h.floor||'—';}],
+    ['电梯', b.elevator||'—', function(h){return h.elevator||'—';}],
+    ['装修', '—', function(h){return h.decor||'—';}],
+    ['朝向', '—', function(h){return h.direction||'—';}],
+    ['押金', '—', function(h){return h.deposit||'—';}],
+    ['租期', '—', function(h){return h.leaseTerm||'—';}],
+    ['距石溪站', '—', function(h){return h.distance||'—';}],
+    ['评分', '—', function(h){return h.score?'⭐'+h.score+'/10':'—';}]
+  ];
+  compareRows.forEach(function(row,i){
+    var isTotal=(row[3]==='total');
+    var bg=isTotal?'background:#fef9e7;font-weight:700;font-size:14px':(i%2===1?'background:#fafbfc':'');
+    html+='<tr style="'+bg+'"><td style="padding:8px;color:#888;border-bottom:1px solid #f5f5f5">'+row[0]+'</td>';
+    html+='<td style="padding:8px;text-align:center;color:'+(isTotal?'#e74c3c':'#333')+';border-bottom:1px solid #f5f5f5">'+row[1]+'</td>';
+    sorted.forEach(function(h){
+      var val=row[2](h);
+      var cellStyle='padding:8px;text-align:center;border-bottom:1px solid #f5f5f5';
+      var cellColor='#333';
+      if(isTotal){
+        var t=parseFloat(h.total)||0;
+        if(t>0&&t<CURRENT_COST){cellColor='var(--green)';}
+        else if(t>0){cellColor='var(--red)';}
+      }
+      html+='<td style="'+cellStyle+';color:'+cellColor+'">'+val+'</td>';
+    });
+    html+='</tr>';
   });
-  if(sorted.length>=1){
-    html+='<div class="compare-card"><h3>📊 费用一览</h3>';
-    html+='<div class="compare-row"><span class="label">🏢 绿地汇金楼 1305（现在）</span><span class="val bad">'+CURRENT_COST.toLocaleString()+' 元/月</span></div>';
-    sorted.forEach(function(h){var t=parseFloat(h.total)||0,s=t>0?CURRENT_COST-t:0;html+='<div class="compare-row"><span class="label">🔍 '+(h.name||'未命名')+'</span><span class="val '+(s>0?'good':(t>0?'bad':''))+'">'+(t>0?t.toLocaleString()+' 元':'\u2014')+'</span></div>';});
-    html+='</div>';
-  }
+  html+='</tbody></table></div>';
+  // 优缺点对比
+  sorted.forEach(function(h){
+    if(!h.pros&&!h.cons)return;
+    var total=parseFloat(h.total)||0,save=total>0?CURRENT_COST-total:0;
+    html+='<div class="compare-card" style="margin:0 12px 12px"><h3>'+(h.name||'未命名')+'</h3>';
+    if(h.pros)html+='<div style="color:#1a9c54;font-size:13px;line-height:1.8">✅ '+h.pros+'</div>';
+    if(h.cons)html+='<div style="color:#c0392b;font-size:13px;line-height:1.8">❌ '+h.cons+'</div>';
+    html+='<div style="margin-top:8px;text-align:right;font-size:14px;font-weight:700;color:'+(save>0?'var(--green)':(total>0?'var(--red)':'#ccc'))+'">'+(save>0?'比现在省 '+save.toLocaleString()+' 元/月':(total>0?'比现在贵 '+Math.abs(save).toLocaleString()+' 元/月':''))+'</div></div>';
+  });
   container.innerHTML=html;
 }
 
