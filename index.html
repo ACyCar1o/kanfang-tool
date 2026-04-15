@@ -460,32 +460,19 @@ function saveHouse() {
   // 编辑当前住所（通过全局标记判断，不依赖隐藏字段 editId）
   if(BASELINE_EDIT_MODE){
     BASELINE_EDIT_MODE = false; // 重置标记
-    var old=loadBaseline();
-    if(!old||!old.name){old=DEFAULT_BASELINE;}
     var bl={};
     var blKeys=['name','roomNum','area','type','rent','waterPrice','waterUsage','elecPrice','elecUsage','propFee','serviceFee','utility','contractEnd'];
-    blKeys.forEach(function(k){ bl[k]=old[k]||''; });
-    // 用表单值覆盖
-    if(data.name) bl.name=data.name;
-    if(data.roomNum!==''&&data.roomNum!==undefined) bl.roomNum=data.roomNum;
-    if(data.area) bl.area=data.area;
-    if(data.type) bl.type=data.type;
-    if(data.rent) bl.rent=data.rent;
-    if(data.waterPrice!==''&&data.waterPrice!==undefined) bl.waterPrice=data.waterPrice;
-    if(data.waterUsage!==''&&data.waterUsage!==undefined) bl.waterUsage=data.waterUsage;
-    if(data.elecPrice!==''&&data.elecPrice!==undefined) bl.elecPrice=data.elecPrice;
-    if(data.elecUsage!==''&&data.elecUsage!==undefined) bl.elecUsage=data.elecUsage;
-    if(data.propFee!==''&&data.propFee!==undefined) bl.propFee=data.propFee;
-    if(data.serviceFee!==''&&data.serviceFee!==undefined) bl.serviceFee=data.serviceFee;
-    if(data.utility) bl.utility=data.utility;
-    if(data.note) bl.contractEnd=data.note;
+    // 用表单值构造，只有字段 ID 映射到 baseline key 的才取
+    var fieldMap={'name':'fName','roomNum':'fRoomNum','area':'fArea','type':'fType','rent':'fRent','waterPrice':'fWaterPrice','waterUsage':'fWaterUsage','elecPrice':'fElecPrice','elecUsage':'fElecUsage','propFee':'fPropFee','serviceFee':'fServiceFee','utility':'fUtility'};
+    blKeys.forEach(function(k){ bl[k]=''; });
+    // 覆盖有值的字段（空字符串也允许，代表用户清空了该字段）
+    Object.keys(fieldMap).forEach(function(k){ bl[k]=document.getElementById(fieldMap[k]).value.trim(); });
+    // contractEnd 从备注字段取
+    bl.contractEnd=document.getElementById('fNote').value.trim();
     var checks=loadChecks();
-    // 先存本地，立即生效
     saveBaselineLocal(bl);
     renderBaseline();
-    // 再推云端
-    var blForCloud=JSON.parse(JSON.stringify(bl));
-    syncSave(houses,checks,blForCloud).then(function(){
+    syncSave(houses,checks,bl).then(function(){
       closeForm();
       renderList();
       document.getElementById('compareContent').innerHTML='';
@@ -531,11 +518,7 @@ function renderBaseline(){
   if(wp)det+=' · 水'+wp+'元/吨';
   if(b.contractEnd)det+=' · 合同'+b.contractEnd+'到期';
   document.getElementById('baselineDetail').innerHTML=det;
-  // 同步当前住所到云端（确保云端数据最新）
-  if(cloudEnabled){
-    var houses=loadData(),checks=loadChecks();
-    cloudPush({houses:houses,checks:checks,baseline:b,updatedAt:new Date().toISOString()}).then(function(){});
-  }
+  // 仅在初始化时由 initCloud() 负责推云端，renderBaseline() 本身不再触发 cloudPush，避免和编辑保存冲突
 }
 function editBaseline(){
   BASELINE_EDIT_MODE = true; // 标记进入 baseline 编辑模式
