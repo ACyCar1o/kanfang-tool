@@ -247,7 +247,7 @@ function cloudPull() {
   return fetch(GH_API + '/repos/' + ghUser + '/kanfang-tool/contents/data.json', {
     headers: { 'Authorization': 'token ' + ghToken, 'Accept': 'application/vnd.github.v3+json' }
   }).then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
-  .then(function(json) { if (json.content && json.sha) { ghSha = json.sha; return JSON.parse(atob(json.content.replace(/\n/g,''))); } throw new Error(); })
+  .then(function(json) { if (json.content && json.sha) { ghSha = json.sha; var decoded = decodeURIComponent(escape(atob(json.content.replace(/\n/g,'')))); return JSON.parse(decoded); } throw new Error(); })
   .catch(function() { return null; });
 }
 
