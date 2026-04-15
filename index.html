@@ -471,15 +471,21 @@ function renderList() {
   houses.forEach(function(h){
     var card=document.createElement('div');card.className='house-card';
     var total=parseFloat(h.total)||0,save=total>0?CURRENT_COST-total:0;
-    var saveText=save>0?'每月省 '+save+' 元':(total>0?'每月多花 '+Math.abs(save)+' 元':'');
     // 预估费用计算
     var est=calcEstimated(h);
-    var estHtml='';
-    if(est.total>0 && (total===0 || Math.abs(est.total-total)>5)){
-      estHtml='<div style="font-size:11px;color:#aaa;margin-top:2px">📊 预估：'+est.total.toLocaleString()+' 元/月（'+est.detail+'）</div>';
-    }else if(est.total>0){
-      estHtml='<div style="font-size:11px;color:#aaa;margin-top:2px">'+est.detail+'</div>';
-    }
+    var displayTotal=total>0?total.toLocaleString():(est.total>0?'~'+est.total.toLocaleString():'\u2014');
+    // 费用明细行
+    var feeDetail='房租 '+(h.rent||'\u2014')+' 元';
+    var pp=parseFloat(h.propFee),area=parseFloat(h.area);
+    if(pp&&area)feeDetail+=' + 物业约 '+Math.round(pp*area)+' 元';
+    else if(pp)feeDetail+=' + 物业'+pp+'元/㎡';
+    if(h.serviceFee)feeDetail+=' + 服务费 '+h.serviceFee+' 元';
+    var wp=parseFloat(h.waterPrice),wu=parseFloat(h.waterUsage),ep=parseFloat(h.elecPrice),eu=parseFloat(h.elecUsage);
+    var wc=(wp&&wu)?Math.round(wp*wu):0, ec=(ep&&eu)?Math.round(ep*eu):0;
+    if(wc||ec)feeDetail+=' + 水电约 '+(wc+ec)+' 元';
+    if(h.utility)feeDetail+='<br>'+h.utility+(ep?' · 电'+ep+'元/度':'')+(wp?' · 水'+wp+'元/吨':'');
+    else if(ep||wp)feeDetail+='<br>'+(ep?'电'+ep+'元/度':'')+(ep&&wp?' · ':'')+(wp?'水'+wp+'元/吨':'');
+    // 标签
     var tags='';
     if(h.type)tags+='<span class="tag tag-blue">'+h.type+'</span>';
     if(h.area)tags+='<span class="tag tag-gray">'+h.area+'㎡</span>';
@@ -488,12 +494,21 @@ function renderList() {
     if(h.elevator)tags+='<span class="tag '+(h.elevator==='有电梯'?'tag-green':'tag-orange')+'">'+h.elevator+'</span>';
     if(h.deposit)tags+='<span class="tag tag-gray">'+h.deposit+'</span>';
     if(h.score){var sc=parseInt(h.score)>=8?'tag-green':(parseInt(h.score)>=6?'tag-blue':'tag-orange');tags+='<span class="tag '+sc+'">⭐ '+h.score+'/10</span>';}
+    if(h.decor)tags+='<span class="tag tag-gray">'+h.decor+'</span>';
+    if(h.direction)tags+='<span class="tag tag-gray">'+h.direction+'</span>';
+    if(h.floor)tags+='<span class="tag tag-gray">'+h.floor+'</span>';
+    // 备注
     var note='';
     if(h.pros)note+='<div style="color:#1a9c54">✅ '+h.pros+'</div>';
     if(h.cons)note+='<div style="color:#c0392b">❌ '+h.cons+'</div>';
+    if(h.note)note+='<div style="color:#888">'+h.note+'</div>';
     if(h.contact)note+='<div style="margin-top:4px">📞 '+h.contact+'</div>';
     if(h.visitDate)note+='<div>🕐 看房：'+h.visitDate+'</div>';
-    card.innerHTML='<div class="house-card-header"><div><div class="name">'+(h.name||'未命名房源')+'</div>'+(saveText?'<div style="font-size:12px;color:'+(save>0?'var(--green)':'var(--red)')+';font-weight:600;margin-top:2px">'+saveText+'</div>':'')+'</div><div style="display:flex;align-items:center;gap:8px;text-align:right"><div><div class="price">'+(total>0?total.toLocaleString():(est.total>0?'~'+est.total.toLocaleString():'\u2014'))+'<small> 元/月</small></div>'+estHtml+'</div></div></div>'+(tags?'<div class="house-card-tags">'+tags+'</div>':'')+(note?'<div class="house-card-note">'+note+'</div>':'')+'<div style="padding:0 16px 12px;display:flex;gap:8px;justify-content:flex-end"><button class="edit-btn" style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer" onclick="openForm(\''+h.id+'\')">编辑</button><button class="del-btn" style="background:#fff;color:var(--red);border:1px solid var(--red);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;margin-left:6px" onclick="deleteHouse(\''+h.id+'\')">删除</button></div>';
+    // 对比标签
+    var saveTag='';
+    if(save>0)saveTag='<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:2px">✅ 每月省 '+save+' 元</div>';
+    else if(total>0)saveTag='<div style="font-size:12px;color:var(--red);font-weight:600;margin-top:2px">❌ 每月多花 '+Math.abs(save)+' 元</div>';
+    card.innerHTML='<div class="house-card-header"><div><div class="name">'+(h.name||'未命名房源')+(h.floor?' · '+h.floor:'')+'</div>'+(h.distance?'<div style="font-size:12px;color:#999;margin-top:2px">📍 距石溪站 '+h.distance+'</div>':'')+saveTag+'</div><div style="display:flex;align-items:center;gap:8px;text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small></div></div></div><div class="house-card-note"><div style="font-size:12px;color:#888;line-height:1.6">'+feeDetail+'</div></div>'+(tags?'<div class="house-card-tags">'+tags+'</div>':'')+(note?'<div class="house-card-note">'+note+'</div>':'')+'<div style="padding:0 16px 12px;display:flex;gap:8px;justify-content:flex-end"><button style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer" onclick="openForm(\''+h.id+'\')">编辑</button><button style="background:#fff;color:var(--red);border:1px solid var(--red);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;margin-left:6px" onclick="deleteHouse(\''+h.id+'\')">删除</button></div>';
     container.appendChild(card);
   });
 }
