@@ -459,26 +459,30 @@ function saveHouse() {
   if(editId==='__baseline__'){
     var old=loadBaseline();
     var bl={};
-    // 继承旧值作为基础，再用表单值覆盖
-    for(var k in old) bl[k]=old[k];
-    bl.name=data.name||old.name||'';
-    bl.roomNum=data.roomNum!==undefined?data.roomNum:old.roomNum;
-    bl.area=data.area||old.area||'';
-    bl.type=data.type||old.type||'';
-    bl.rent=data.rent||old.rent||'0';
-    bl.waterPrice=data.waterPrice!==undefined?data.waterPrice:old.waterPrice;
-    bl.waterUsage=data.waterUsage!==undefined?data.waterUsage:old.waterUsage;
-    bl.elecPrice=data.elecPrice!==undefined?data.elecPrice:old.elecPrice;
-    bl.elecUsage=data.elecUsage!==undefined?data.elecUsage:old.elecUsage;
-    bl.propFee=data.propFee!==undefined?data.propFee:old.propFee;
-    bl.serviceFee=data.serviceFee!==undefined?data.serviceFee:old.serviceFee;
-    bl.utility=data.utility||old.utility||'';
-    bl.contractEnd=data.note||old.contractEnd||'';
+    // 只继承 baseline 需要的字段，排除 house 特有字段
+    var blKeys=['name','roomNum','area','type','rent','waterPrice','waterUsage','elecPrice','elecUsage','propFee','serviceFee','utility','contractEnd'];
+    blKeys.forEach(function(k){ bl[k]=old[k]||''; });
+    // 用表单值覆盖（只覆盖有值的字段）
+    if(data.name) bl.name=data.name;
+    if(data.roomNum!==undefined&&data.roomNum!=='') bl.roomNum=data.roomNum;
+    if(data.area) bl.area=data.area;
+    if(data.type) bl.type=data.type;
+    if(data.rent) bl.rent=data.rent;
+    if(data.waterPrice!==undefined&&data.waterPrice!=='') bl.waterPrice=data.waterPrice;
+    if(data.waterUsage!==undefined&&data.waterUsage!=='') bl.waterUsage=data.waterUsage;
+    if(data.elecPrice!==undefined&&data.elecPrice!=='') bl.elecPrice=data.elecPrice;
+    if(data.elecUsage!==undefined&&data.elecUsage!=='') bl.elecUsage=data.elecUsage;
+    if(data.propFee!==undefined&&data.propFee!=='') bl.propFee=data.propFee;
+    if(data.serviceFee!==undefined&&data.serviceFee!=='') bl.serviceFee=data.serviceFee;
+    if(data.utility) bl.utility=data.utility;
+    // 合同到期日从备注字段取
+    if(data.note) bl.contractEnd=data.note;
     var checks=loadChecks();
     saveBaselineLocal(bl);
-    syncSave(houses,checks,bl).then(function(){
-      closeForm();renderBaseline();renderList();
-      // 清除对比页缓存，确保切换时用新数据
+    renderBaseline();
+    var blForCloud=JSON.parse(JSON.stringify(bl));
+    syncSave(houses,checks,blForCloud).then(function(){
+      closeForm();renderList();
       document.getElementById('compareContent').innerHTML='';
       showToast('当前住所已更新');
     });
