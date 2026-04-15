@@ -103,11 +103,11 @@
     <div class="tab" data-tab="timeline">📅 时间线</div>
   </div>
   <div class="tab-content active" id="tab-list">
-    <div class="baseline-card">
-      <div class="label">📌 当前住所（参照基准）</div>
-      <div class="name">绿地汇金楼 1305 · 60.74㎡ 一室一厅</div>
-      <div class="amount">4,160 <small>元/月</small></div>
-      <div class="detail">房租3,300 + 服务费260 + 物业费约210(3.45元/㎡) + 水电约390<br>商水商电 · 电0.73元/度 · 水5.8元/吨 · 合同5月31日到期</div>
+    <div class="baseline-card" id="baselineCard">
+      <div class="label">📌 当前住所（参照基准）<span id="baselineEditBtn" onclick="editBaseline()" style="float:right;cursor:pointer;font-size:11px;opacity:.7;text-decoration:underline">编辑</span></div>
+      <div class="name" id="baselineName">绿地汇金楼 1305 · 60.74㎡ 一室一厅</div>
+      <div class="amount"><span id="baselineAmount">4,160</span> <small>元/月</small></div>
+      <div class="detail" id="baselineDetail">房租3,300 + 服务费260 + 物业费约210(3.45元/㎡) + 水电约390<br>商水商电 · 电0.73元/度 · 水5.8元/吨 · 合同5月31日到期</div>
     </div>
     <div class="house-list" id="houseList">
       <div class="empty-state" id="emptyState"><div class="icon">📝</div><p>还没记录任何房源<br>点击右下角 ＋ 添加第一套</p></div>
@@ -450,6 +450,14 @@ function saveHouse() {
     updatedAt:new Date().toLocaleString('zh-CN')
   };
   if(!data.name&&!data.rent){showToast('至少填写小区名或月租金');return;}
+  // 编辑当前住所
+  if(editId==='__baseline__'){
+    var bl={name:data.name,roomNum:data.roomNum,area:data.area,type:data.type,rent:data.rent,waterPrice:data.waterPrice,waterUsage:data.waterUsage,elecPrice:data.elecPrice,elecUsage:data.elecUsage,propFee:data.propFee,serviceFee:data.serviceFee,utility:data.utility,contractEnd:data.note};
+    saveBaselineLocal(bl);
+    var checks=loadChecks();
+    syncSave(houses,checks).then(function(){closeForm();renderBaseline();renderList();showToast('当前住所已更新');});
+    return;
+  }
   if(editId){var idx=houses.findIndex(function(x){return x.id===editId});if(idx>=0)houses[idx]=data;}else{houses.unshift(data);}
   var checks=loadChecks();
   syncSave(houses,checks).then(function(){closeForm();renderList();showToast(editId?'已更新':'已添加');});
@@ -460,6 +468,67 @@ function deleteHouse(id) {
   var houses=loadData().filter(function(x){return x.id!==id});
   var checks=loadChecks();
   syncSave(houses,checks).then(function(){renderList();showToast('已删除');});
+}
+
+// === 当前住所（基准）===
+var BASELINE_KEY = 'kanfang_baseline';
+var DEFAULT_BASELINE = {name:'绿地汇金楼 1305', roomNum:'', area:'60.74', type:'一室一厅', rent:'3300', serviceFee:'260', propFee:'3.45', waterPrice:'5.8', waterUsage:'2', elecPrice:'0.73', elecUsage:'425', utility:'商水商电', contractEnd:'5月31日', detail:''};
+function loadBaseline(){try{var d=JSON.parse(localStorage.getItem(BASELINE_KEY));return d&&d.name?d:DEFAULT_BASELINE;}catch(e){return DEFAULT_BASELINE;}}
+function saveBaselineLocal(b){localStorage.setItem(BASELINE_KEY,JSON.stringify(b));}
+function renderBaseline(){
+  var b=loadBaseline();
+  var title=(b.name||'')+(b.roomNum?' '+b.roomNum:'')+(b.area?' · '+b.area+'㎡':'')+(b.type?' '+b.type:'');
+  document.getElementById('baselineName').textContent=title||'未设置';
+  var pp=parseFloat(b.propFee),area=parseFloat(b.area),wp=parseFloat(b.waterPrice),wu=parseFloat(b.waterUsage),ep=parseFloat(b.elecPrice),eu=parseFloat(b.elecUsage),svc=parseFloat(b.serviceFee),rent=parseFloat(b.rent);
+  var wc=(wp&&wu)?Math.round(wp*wu):0, ec=(ep&&eu)?Math.round(ep*eu):0, pc=(pp&&area)?Math.round(pp*area):0;
+  var total=Math.round((rent||0)+(svc||0)+pc+wc+ec);
+  CURRENT_COST=total;
+  document.getElementById('baselineAmount').textContent=total.toLocaleString();
+  document.getElementById('statCurrent').textContent=total.toLocaleString();
+  var parts=[];
+  if(rent)parts.push('房租'+rent.toLocaleString());
+  if(svc)parts.push('服务费'+svc);
+  if(pc)parts.push('物业费约'+pc+'('+(pp||'')+'元/㎡)');
+  if(wc||ec)parts.push('水电约'+(wc+ec));
+  var det=parts.join(' + ');
+  if(b.utility)det+='<br>'+b.utility;
+  if(ep)det+=' · 电'+ep+'元/度';
+  if(wp)det+=' · 水'+wp+'元/吨';
+  if(b.contractEnd)det+=' · 合同'+b.contractEnd+'到期';
+  document.getElementById('baselineDetail').innerHTML=det;
+}
+function editBaseline(){
+  var b=loadBaseline();
+  document.getElementById('formTitle').textContent='编辑当前住所';
+  document.getElementById('editId').value='__baseline__';
+  document.getElementById('fName').value=b.name||'';
+  document.getElementById('fRoomNum').value=b.roomNum||'';
+  document.getElementById('fArea').value=b.area||'';
+  document.getElementById('fType').value=b.type||'';
+  document.getElementById('fRent').value=b.rent||'';
+  document.getElementById('fWaterPrice').value=b.waterPrice||'';
+  document.getElementById('fWaterUsage').value=b.waterUsage||'';
+  document.getElementById('fElecPrice').value=b.elecPrice||'';
+  document.getElementById('fElecUsage').value=b.elecUsage||'';
+  document.getElementById('fPropFee').value=b.propFee||'';
+  document.getElementById('fServiceFee').value=b.serviceFee||'';
+  document.getElementById('fUtility').value=b.utility||'';
+  document.getElementById('fDeposit').value='';
+  document.getElementById('fAgentFee').value='';
+  document.getElementById('fTotal').value='';
+  document.getElementById('fDecor').value='';
+  document.getElementById('fElevator').value='';
+  document.getElementById('fDirection').value='';
+  document.getElementById('fAppliance').value='';
+  document.getElementById('fLeaseTerm').value='';
+  document.getElementById('fScore').value='';
+  document.getElementById('fContact').value='';
+  document.getElementById('fVisitDate').value='';
+  document.getElementById('fPros').value='';
+  document.getElementById('fCons').value='';
+  document.getElementById('fNote').value=b.contractEnd||'';
+  document.getElementById('formPage').classList.add('show');
+  document.getElementById('fabAdd').style.display='none';
 }
 
 // === 渲染列表 ===
@@ -479,11 +548,10 @@ function renderList() {
     var titleParts=[];
     if(h.name)titleParts.push(h.name);
     if(h.roomNum)titleParts.push(h.roomNum);
+    if(h.area)titleParts.push(h.area+'㎡');
+    if(h.type)titleParts.push(h.type);
     var title=titleParts.join(' · ')||'未命名房源';
-    var subParts=[];
-    if(h.area)subParts.push(h.area+'㎡');
-    if(h.type)subParts.push(h.type);
-    var subInfo=subParts.join(' · ');
+    var subInfo='';
     // 预估费用
     var displayTotal=total>0?total.toLocaleString():(est.total>0?'~'+est.total.toLocaleString():'\u2014');
     var estLine='';
@@ -542,7 +610,7 @@ function renderCompare() {
   });
   if(sorted.length>=1){
     html+='<div class="compare-card"><h3>📊 费用一览</h3>';
-    html+='<div class="compare-row"><span class="label">🏢 绿地汇金楼 1305（现在）</span><span class="val bad">4,160 元/月</span></div>';
+    html+='<div class="compare-row"><span class="label">🏢 绿地汇金楼 1305（现在）</span><span class="val bad">'+CURRENT_COST.toLocaleString()+' 元/月</span></div>';
     sorted.forEach(function(h){var t=parseFloat(h.total)||0,s=t>0?CURRENT_COST-t:0;html+='<div class="compare-row"><span class="label">🔍 '+(h.name||'未命名')+'</span><span class="val '+(s>0?'good':(t>0?'bad':''))+'">'+(t>0?t.toLocaleString()+' 元':'\u2014')+'</span></div>';});
     html+='</div>';
   }
@@ -575,6 +643,7 @@ function initCloud() {
   });
 }
 
+renderBaseline();
 if (loadSetup()) { initCloud(); }
 else { document.getElementById('setupModal').classList.add('show'); }
 </script>
