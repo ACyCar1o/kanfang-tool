@@ -169,10 +169,11 @@
       <input type="hidden" id="editId">
       <div class="form-group">
         <div class="form-group-title">🏠 基本信息</div>
-        <div class="form-row"><label class="form-label">小区/地址</label><input class="form-input" id="fName" placeholder="如：第一金碧花园 3栋 502"></div>
-        <div class="form-half"><div class="form-row"><label class="form-label">面积（㎡）</label><input class="form-input" id="fArea" type="number" placeholder="35"></div><div class="form-row"><label class="form-label">楼层</label><input class="form-input" id="fFloor" placeholder="如：5/8"></div></div>
+        <div class="form-row"><label class="form-label">小区/地址</label><input class="form-input" id="fName" placeholder="如：第一金碧花园"></div>
+        <div class="form-half"><div class="form-row"><label class="form-label">栋/房号</label><input class="form-input" id="fRoomNum" placeholder="如：3栋 502"></div><div class="form-row"><label class="form-label">面积（㎡）</label><input class="form-input" id="fArea" type="number" placeholder="35"></div></div>
+        <div class="form-row"><label class="form-label">户型</label><select class="form-input" id="fType"><option value="">请选择</option><option value="单间">单间</option><option value="大单间">大单间</option><option value="一室一厅">一室一厅</option><option value="一房一厅">一房一厅</option><option value="两室一厅">两室一厅</option><option value="两房一厅">两房一厅</option></select></div>
+        <div class="form-half"><div class="form-row"><label class="form-label">楼层</label><input class="form-input" id="fFloor" placeholder="如：5/8"></div><div class="form-row"><label class="form-label">朝向</label><select class="form-input" id="fDirection"><option value="">请选择</option><option value="南">南</option><option value="东南">东南</option><option value="东">东</option><option value="西南">西南</option><option value="西">西</option><option value="北">北</option><option value="不确定">不确定</option></select></div></div>
         <div class="form-row"><label class="form-label">距石溪站</label><input class="form-input" id="fDistance" placeholder="如：步行5分钟 / 300米"></div>
-        <div class="form-row"><label class="form-label">户型</label><select class="form-input" id="fType"><option value="">请选择</option><option value="大单间">大单间</option><option value="一房一厅">一房一厅</option><option value="两房一厅">两房一厅</option></select></div>
       </div>
       <div class="form-group">
         <div class="form-group-title">💰 费用明细</div>
@@ -189,10 +190,8 @@
       <div class="form-group">
         <div class="form-group-title">🏠 房屋情况</div>
         <div class="form-row"><label class="form-label">装修</label><select class="form-input" id="fDecor"><option value="">请选择</option><option value="毛坯">毛坯</option><option value="简装">简装</option><option value="精装">精装</option><option value="豪装">豪装</option></select></div>
-        <div class="form-row"><label class="form-label">电梯</label><select class="form-input" id="fElevator"><option value="">请选择</option><option value="有电梯">有电梯</option><option value="无电梯">无电梯</option></select></div>
-        <div class="form-row"><label class="form-label">朝向</label><select class="form-input" id="fDirection"><option value="">请选择</option><option value="南">南</option><option value="东南">东南</option><option value="东">东</option><option value="西南">西南</option><option value="西">西</option><option value="北">北</option><option value="不确定">不确定</option></select></div>
-        <div class="form-row"><label class="form-label">家电配置</label><input class="form-input" id="fAppliance" placeholder="如：空调、冰箱、洗衣机、热水器"></div>
-        <div class="form-row"><label class="form-label">评分</label><select class="form-input" id="fScore"><option value="">打分</option><option value="10">10 · 完美</option><option value="9">9 · 很好</option><option value="8">8 · 不错</option><option value="7">7 · 还行</option><option value="6">6 · 一般</option><option value="5">5 · 勉强</option><option value="4">4 · 较差</option><option value="3">3 · 很差</option></select></div>
+        <div class="form-half"><div class="form-row"><label class="form-label">电梯</label><select class="form-input" id="fElevator"><option value="">请选择</option><option value="有电梯">有电梯</option><option value="无电梯">无电梯</option></select></div><div class="form-row"><label class="form-label">家电配置</label><input class="form-input" id="fAppliance" placeholder="空调/冰箱/洗衣机"></div></div>
+        <div class="form-half"><div class="form-row"><label class="form-label">租期</label><select class="form-input" id="fLeaseTerm"><option value="">请选择</option><option value="1年">1年</option><option value="半年">半年</option><option value="1年可续">1年可续</option><option value="半年可续">半年可续</option><option value="可短租">可短租</option><option value="面议">面议</option></select></div><div class="form-row"><label class="form-label">评分</label><select class="form-input" id="fScore"><option value="">打分</option><option value="10">10 · 完美</option><option value="9">9 · 很好</option><option value="8">8 · 不错</option><option value="7">7 · 还行</option><option value="6">6 · 一般</option><option value="5">5 · 勉强</option><option value="4">4 · 较差</option><option value="3">3 · 很差</option></select></div></div>
       </div>
       <div class="form-group">
         <div class="form-group-title">📌 联系与备注</div>
@@ -362,7 +361,7 @@ function calcEstimated(h) {
 document.getElementById('fTotal').addEventListener('input',function(){this.dataset.auto='0'});
 
 // === 表单 ===
-var formFields = ['fName','fArea','fFloor','fDistance','fType','fRent','fUtility','fElecPrice','fWaterPrice','fWaterUsage','fElecUsage','fServiceFee','fPropFee','fDeposit','fAgentFee','fTotal','fDecor','fElevator','fDirection','fAppliance','fScore','fContact','fVisitDate','fPros','fCons','fNote'];
+var formFields = ['fName','fRoomNum','fArea','fType','fFloor','fDirection','fDistance','fRent','fUtility','fElecPrice','fWaterPrice','fWaterUsage','fElecUsage','fServiceFee','fPropFee','fDeposit','fAgentFee','fTotal','fDecor','fElevator','fAppliance','fLeaseTerm','fScore','fContact','fVisitDate','fPros','fCons','fNote'];
 
 function openForm(id) {
   var houses = loadData();
@@ -374,10 +373,12 @@ function openForm(id) {
     formFields.forEach(function(fid){ var el=document.getElementById(fid); if(el) el.value=h[fid.replace('f','').replace('f','')]||''; });
     // manual field mapping
     document.getElementById('fName').value=h.name||'';
+    document.getElementById('fRoomNum').value=h.roomNum||'';
     document.getElementById('fArea').value=h.area||'';
     document.getElementById('fFloor').value=h.floor||'';
     document.getElementById('fDistance').value=h.distance||'';
     document.getElementById('fType').value=h.type||'';
+    document.getElementById('fDirection').value=h.direction||'';
     document.getElementById('fRent').value=h.rent||'';
     document.getElementById('fUtility').value=h.utility||'';
     document.getElementById('fElecPrice').value=h.elecPrice||'';
@@ -391,8 +392,8 @@ function openForm(id) {
     document.getElementById('fTotal').value=h.total||'';
     document.getElementById('fDecor').value=h.decor||'';
     document.getElementById('fElevator').value=h.elevator||'';
-    document.getElementById('fDirection').value=h.direction||'';
     document.getElementById('fAppliance').value=h.appliance||'';
+    document.getElementById('fLeaseTerm').value=h.leaseTerm||'';
     document.getElementById('fScore').value=h.score||'';
     document.getElementById('fContact').value=h.contact||'';
     document.getElementById('fVisitDate').value=h.visitDate||'';
@@ -419,10 +420,12 @@ function saveHouse() {
   var data={
     id:editId||'h'+Date.now(),
     name:document.getElementById('fName').value.trim(),
+    roomNum:document.getElementById('fRoomNum').value.trim(),
     area:document.getElementById('fArea').value.trim(),
     floor:document.getElementById('fFloor').value.trim(),
     distance:document.getElementById('fDistance').value.trim(),
     type:document.getElementById('fType').value,
+    direction:document.getElementById('fDirection').value,
     rent:document.getElementById('fRent').value.trim(),
     utility:document.getElementById('fUtility').value,
     elecPrice:document.getElementById('fElecPrice').value.trim(),
@@ -436,8 +439,8 @@ function saveHouse() {
     total:document.getElementById('fTotal').value.trim(),
     decor:document.getElementById('fDecor').value,
     elevator:document.getElementById('fElevator').value,
-    direction:document.getElementById('fDirection').value,
     appliance:document.getElementById('fAppliance').value.trim(),
+    leaseTerm:document.getElementById('fLeaseTerm').value,
     score:document.getElementById('fScore').value,
     contact:document.getElementById('fContact').value.trim(),
     visitDate:document.getElementById('fVisitDate').value.trim(),
@@ -471,44 +474,52 @@ function renderList() {
   houses.forEach(function(h){
     var card=document.createElement('div');card.className='house-card';
     var total=parseFloat(h.total)||0,save=total>0?CURRENT_COST-total:0;
-    // 预估费用计算
     var est=calcEstimated(h);
+    // 第一行：地点 + 房间号 + 面积 + 户型
+    var titleParts=[];
+    if(h.name)titleParts.push(h.name);
+    if(h.roomNum)titleParts.push(h.roomNum);
+    var title=titleParts.join(' · ')||'未命名房源';
+    var subParts=[];
+    if(h.area)subParts.push(h.area+'㎡');
+    if(h.type)subParts.push(h.type);
+    var subInfo=subParts.join(' · ');
+    // 预估费用
     var displayTotal=total>0?total.toLocaleString():(est.total>0?'~'+est.total.toLocaleString():'\u2014');
-    // 费用明细行
-    var feeDetail='房租 '+(h.rent||'\u2014')+' 元';
-    var pp=parseFloat(h.propFee),area=parseFloat(h.area);
-    if(pp&&area)feeDetail+=' + 物业约 '+Math.round(pp*area)+' 元';
-    else if(pp)feeDetail+=' + 物业'+pp+'元/㎡';
-    if(h.serviceFee)feeDetail+=' + 服务费 '+h.serviceFee+' 元';
-    var wp=parseFloat(h.waterPrice),wu=parseFloat(h.waterUsage),ep=parseFloat(h.elecPrice),eu=parseFloat(h.elecUsage);
-    var wc=(wp&&wu)?Math.round(wp*wu):0, ec=(ep&&eu)?Math.round(ep*eu):0;
-    if(wc||ec)feeDetail+=' + 水电约 '+(wc+ec)+' 元';
-    if(h.utility)feeDetail+='<br>'+h.utility+(ep?' · 电'+ep+'元/度':'')+(wp?' · 水'+wp+'元/吨':'');
-    else if(ep||wp)feeDetail+='<br>'+(ep?'电'+ep+'元/度':'')+(ep&&wp?' · ':'')+(wp?'水'+wp+'元/吨':'');
+    var estLine='';
+    if(est.total>0 && total===0) estLine='📊 自动预估';
+    else if(est.total>0 && total>0) estLine='（系统估算 ~'+est.total.toLocaleString()+' 元）';
     // 标签
     var tags='';
-    if(h.type)tags+='<span class="tag tag-blue">'+h.type+'</span>';
-    if(h.area)tags+='<span class="tag tag-gray">'+h.area+'㎡</span>';
     if(h.utility==='民水民电')tags+='<span class="tag tag-green">民水民电</span>';
     else if(h.utility==='商水商电')tags+='<span class="tag tag-red">商水商电</span>';
+    else if(h.utility)tags+='<span class="tag tag-orange">'+h.utility+'</span>';
     if(h.elevator)tags+='<span class="tag '+(h.elevator==='有电梯'?'tag-green':'tag-orange')+'">'+h.elevator+'</span>';
     if(h.deposit)tags+='<span class="tag tag-gray">'+h.deposit+'</span>';
-    if(h.score){var sc=parseInt(h.score)>=8?'tag-green':(parseInt(h.score)>=6?'tag-blue':'tag-orange');tags+='<span class="tag '+sc+'">⭐ '+h.score+'/10</span>';}
-    if(h.decor)tags+='<span class="tag tag-gray">'+h.decor+'</span>';
+    if(h.leaseTerm)tags+='<span class="tag tag-blue">'+h.leaseTerm+'</span>';
     if(h.direction)tags+='<span class="tag tag-gray">'+h.direction+'</span>';
-    if(h.floor)tags+='<span class="tag tag-gray">'+h.floor+'</span>';
-    // 备注
-    var note='';
-    if(h.pros)note+='<div style="color:#1a9c54">✅ '+h.pros+'</div>';
-    if(h.cons)note+='<div style="color:#c0392b">❌ '+h.cons+'</div>';
-    if(h.note)note+='<div style="color:#888">'+h.note+'</div>';
-    if(h.contact)note+='<div style="margin-top:4px">📞 '+h.contact+'</div>';
-    if(h.visitDate)note+='<div>🕐 看房：'+h.visitDate+'</div>';
-    // 对比标签
-    var saveTag='';
-    if(save>0)saveTag='<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:2px">✅ 每月省 '+save+' 元</div>';
-    else if(total>0)saveTag='<div style="font-size:12px;color:var(--red);font-weight:600;margin-top:2px">❌ 每月多花 '+Math.abs(save)+' 元</div>';
-    card.innerHTML='<div class="house-card-header"><div><div class="name">'+(h.name||'未命名房源')+(h.floor?' · '+h.floor:'')+'</div>'+(h.distance?'<div style="font-size:12px;color:#999;margin-top:2px">📍 距石溪站 '+h.distance+'</div>':'')+saveTag+'</div><div style="display:flex;align-items:center;gap:8px;text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small></div></div></div><div class="house-card-note"><div style="font-size:12px;color:#888;line-height:1.6">'+feeDetail+'</div></div>'+(tags?'<div class="house-card-tags">'+tags+'</div>':'')+(note?'<div class="house-card-note">'+note+'</div>':'')+'<div style="padding:0 16px 12px;display:flex;gap:8px;justify-content:flex-end"><button style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer" onclick="openForm(\''+h.id+'\')">编辑</button><button style="background:#fff;color:var(--red);border:1px solid var(--red);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;margin-left:6px" onclick="deleteHouse(\''+h.id+'\')">删除</button></div>';
+    if(h.decor)tags+='<span class="tag tag-gray">'+h.decor+'</span>';
+    if(h.floor)tags+='<span class="tag tag-gray">'+h.floor+'层</span>';
+    if(h.score){var sc=parseInt(h.score)>=8?'tag-green':(parseInt(h.score)>=6?'tag-blue':'tag-orange');tags+='<span class="tag '+sc+'">⭐'+h.score+'</span>';}
+    // 对比
+    var saveLine='';
+    if(save>0)saveLine='<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:2px">✅ 比现在每月省 '+save+' 元/月</div>';
+    else if(total>0)saveLine='<div style="font-size:12px;color:var(--red);font-weight:600;margin-top:2px">❌ 比现在贵 '+Math.abs(save)+' 元/月</div>';
+    // 其他内容
+    var other='';
+    if(h.distance)other+='<div style="font-size:12px;color:#888">📍 '+h.distance+'</div>';
+    if(h.appliance)other+='<div style="font-size:12px;color:#888">🔌 '+h.appliance+'</div>';
+    if(h.pros)other+='<div style="color:#1a9c54;font-size:13px">✅ '+h.pros+'</div>';
+    if(h.cons)other+='<div style="color:#c0392b;font-size:13px">❌ '+h.cons+'</div>';
+    if(h.note)other+='<div style="color:#888;font-size:13px">'+h.note+'</div>';
+    if(h.contact)other+='<div style="font-size:12px;color:#888;margin-top:2px">📞 '+h.contact+'</div>';
+    if(h.visitDate)other+='<div style="font-size:12px;color:#888">🕐 '+h.visitDate+'</div>';
+
+    card.innerHTML='<div class="house-card-header"><div><div class="name">'+title+'</div>'+subInfo?('<div style="font-size:12px;color:#999;margin-top:2px">'+subInfo+'</div>'):''
+      +saveLine+'</div><div style="text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small></div>'+(estLine?'<div style="font-size:11px;color:#aaa">'+estLine+'</div>':'')+'</div></div>'
+      +(tags?'<div class="house-card-tags">'+tags+'</div>':'')
+      +(other?'<div class="house-card-note">'+other+'</div>':'')
+      +'<div style="padding:0 16px 12px;display:flex;gap:8px;justify-content:flex-end"><button style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer" onclick="openForm(\''+h.id+'\')">编辑</button><button style="background:#fff;color:var(--red);border:1px solid var(--red);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;margin-left:6px" onclick="deleteHouse(\''+h.id+'\')">删除</button></div>';
     container.appendChild(card);
   });
 }
