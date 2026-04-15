@@ -283,11 +283,14 @@ function saveLocal(h) { localStorage.setItem(STORAGE_KEY, JSON.stringify(h)); }
 function loadChecks() { try { return JSON.parse(localStorage.getItem(CHECK_KEY)) || []; } catch(e) { return []; } }
 function saveChecksLocal(c) { localStorage.setItem(CHECK_KEY, JSON.stringify(c)); }
 
-function syncSave(houses, checks) {
+function syncSave(houses, checks, baseline) {
   saveLocal(houses); saveChecksLocal(checks);
+  if (baseline) saveBaselineLocal(baseline);
   if (!cloudEnabled) return Promise.resolve();
   showSyncMsg('loading');
-  return cloudPush({ houses: houses, checks: checks, updatedAt: new Date().toISOString() })
+  var payload = { houses: houses, checks: checks, updatedAt: new Date().toISOString() };
+  if (baseline) payload.baseline = baseline;
+  return cloudPush(payload)
     .then(function(ok) { showSyncMsg(ok ? 'ok' : 'fail'); });
 }
 
@@ -455,21 +458,20 @@ function saveHouse() {
   // 编辑当前住所
   if(editId==='__baseline__'){
     var bl={name:data.name,roomNum:data.roomNum,area:data.area,type:data.type,rent:data.rent,waterPrice:data.waterPrice,waterUsage:data.waterUsage,elecPrice:data.elecPrice,elecUsage:data.elecUsage,propFee:data.propFee,serviceFee:data.serviceFee,utility:data.utility,contractEnd:data.note};
-    saveBaselineLocal(bl);
     var checks=loadChecks();
-    syncSave(houses,checks).then(function(){closeForm();renderBaseline();renderList();showToast('当前住所已更新');});
+    syncSave(houses,checks,bl).then(function(){closeForm();renderBaseline();renderList();showToast('当前住所已更新');});
     return;
   }
   if(editId){var idx=houses.findIndex(function(x){return x.id===editId});if(idx>=0)houses[idx]=data;}else{houses.unshift(data);}
   var checks=loadChecks();
-  syncSave(houses,checks).then(function(){closeForm();renderList();showToast(editId?'已更新':'已添加');});
+  syncSave(houses,checks,null).then(function(){closeForm();renderList();showToast(editId?'已更新':'已添加');});
 }
 
 function deleteHouse(id) {
   if(!confirm('确定删除这套房源？'))return;
   var houses=loadData().filter(function(x){return x.id!==id});
   var checks=loadChecks();
-  syncSave(houses,checks).then(function(){renderList();showToast('已删除');});
+  syncSave(houses,checks,null).then(function(){renderList();showToast('已删除');});
 }
 
 // === 当前住所（基准）===
@@ -666,7 +668,7 @@ function renderCompare() {
 // === 清单 ===
 function toggleCheck(el){setTimeout(function(){updateProgress();saveCheckStateSync();},10);}
 function updateProgress(){var items=document.querySelectorAll('#tab-checklist .check-item input[type="checkbox"]'),total=items.length,checked=0;items.forEach(function(cb){if(cb.checked)checked++;});document.getElementById('progressText').textContent=checked+' / '+total+' 项';document.getElementById('progressFill').style.width=(total>0?(checked/total*100):0)+'%';}
-function saveCheckStateSync(){var items=document.querySelectorAll('#tab-checklist .check-item input[type="checkbox"]'),states=[];items.forEach(function(cb){states.push(cb.checked)});var houses=loadData();syncSave(houses,states);}
+function saveCheckStateSync(){var items=document.querySelectorAll('#tab-checklist .check-item input[type="checkbox"]'),states=[];items.forEach(function(cb){states.push(cb.checked)});var houses=loadData();syncSave(houses,states,null);}
 function restoreChecks(){var states=loadChecks(),items=document.querySelectorAll('#tab-checklist .check-item input[type="checkbox"]');items.forEach(function(cb,i){if(i<states.length){cb.checked=states[i];var text=cb.parentElement.querySelector('.text');if(cb.checked)text.classList.add('done');else text.classList.remove('done');}});updateProgress();}
 document.querySelectorAll('#tab-checklist .check-item input[type="checkbox"]').forEach(function(cb){cb.addEventListener('change',function(){var text=this.parentElement.querySelector('.text');if(this.checked)text.classList.add('done');else text.classList.remove('done');});});
 
@@ -678,12 +680,14 @@ function initCloud() {
     if (cloudData && cloudData.houses) {
       saveLocal(cloudData.houses);
       if (cloudData.checks) saveChecksLocal(cloudData.checks);
+      if (cloudData.baseline) saveBaselineLocal(cloudData.baseline);
+      renderBaseline();
       renderList(); restoreChecks();
       showSyncMsg('ok');
     } else {
       // push local data up
-      var houses = loadData(), checks = loadChecks();
-      cloudPush({ houses: houses, checks: checks, updatedAt: new Date().toISOString() })
+      var houses = loadData(), checks = loadChecks(), baseline = loadBaseline();
+      cloudPush({ houses: houses, checks: checks, baseline: baseline, updatedAt: new Date().toISOString() })
         .then(function() { renderList(); restoreChecks(); showSyncMsg('ok'); });
     }
   });
