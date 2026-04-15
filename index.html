@@ -503,8 +503,8 @@ function renderList() {
     if(h.score){var sc=parseInt(h.score)>=8?'tag-green':(parseInt(h.score)>=6?'tag-blue':'tag-orange');tags+='<span class="tag '+sc+'">⭐'+h.score+'</span>';}
     // 对比
     var saveLine='';
-    if(save>0)saveLine='<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:2px">✅ 比现在每月省 '+save+' 元/月</div>';
-    else if(total>0)saveLine='<div style="font-size:12px;color:var(--red);font-weight:600;margin-top:2px">❌ 比现在贵 '+Math.abs(save)+' 元/月</div>';
+    if(save>0)saveLine='<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:2px">✅ 比现在省 '+save.toLocaleString()+' 元/月</div>';
+    else if(total>0)saveLine='<div style="font-size:12px;color:var(--red);font-weight:600;margin-top:2px">❌ 比现在贵 '+Math.abs(save).toLocaleString()+' 元/月</div>';
     // 其他内容
     var other='';
     if(h.distance)other+='<div style="font-size:12px;color:#888">📍 '+h.distance+'</div>';
@@ -516,7 +516,6 @@ function renderList() {
     if(h.visitDate)other+='<div style="font-size:12px;color:#888">🕐 '+h.visitDate+'</div>';
 
     card.innerHTML='<div class="house-card-header"><div><div class="name">'+title+'</div>'+(subInfo?'<div style="font-size:12px;color:#999;margin-top:2px">'+subInfo+'</div>':'')
-      +saveLine+'</div><div style="text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small></div>'+(estLine?'<div style="font-size:11px;color:#aaa">'+estLine+'</div>':'')+'</div></div>'
       +saveLine+'</div><div style="text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small></div>'+(estLine?'<div style="font-size:11px;color:#aaa">'+estLine+'</div>':'')+'</div></div>'
       +(tags?'<div class="house-card-tags">'+tags+'</div>':'')
       +(other?'<div class="house-card-note">'+other+'</div>':'')
