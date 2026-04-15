@@ -515,7 +515,8 @@ function renderList() {
     if(h.contact)other+='<div style="font-size:12px;color:#888;margin-top:2px">📞 '+h.contact+'</div>';
     if(h.visitDate)other+='<div style="font-size:12px;color:#888">🕐 '+h.visitDate+'</div>';
 
-    card.innerHTML='<div class="house-card-header"><div><div class="name">'+title+'</div>'+subInfo?('<div style="font-size:12px;color:#999;margin-top:2px">'+subInfo+'</div>'):''
+    card.innerHTML='<div class="house-card-header"><div><div class="name">'+title+'</div>'+(subInfo?'<div style="font-size:12px;color:#999;margin-top:2px">'+subInfo+'</div>':'')
+      +saveLine+'</div><div style="text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small></div>'+(estLine?'<div style="font-size:11px;color:#aaa">'+estLine+'</div>':'')+'</div></div>'
       +saveLine+'</div><div style="text-align:right"><div class="price">'+displayTotal+'<small> 元/月</small></div>'+(estLine?'<div style="font-size:11px;color:#aaa">'+estLine+'</div>':'')+'</div></div>'
       +(tags?'<div class="house-card-tags">'+tags+'</div>':'')
       +(other?'<div class="house-card-note">'+other+'</div>':'')
