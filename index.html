@@ -105,9 +105,9 @@
   <div class="tab-content active" id="tab-list">
     <div class="baseline-card">
       <div class="label">📌 当前住所（参照基准）</div>
-      <div class="name">绿地汇金楼 · 60㎡ 一房一厅</div>
+      <div class="name">绿地汇金楼 1305 · 60.74㎡ 一室一厅</div>
       <div class="amount">4,160 <small>元/月</small></div>
-      <div class="detail">房租3,300 + 服务费260 + 物业费210(3.45×60㎡) + 水电约390<br>商水商电 · 电0.73元/度 · 水5.8元/吨 · 合同5月31日到期</div>
+      <div class="detail">房租3,300 + 服务费260 + 物业费约210(3.45元/㎡) + 水电约390<br>商水商电 · 电0.73元/度 · 水5.8元/吨 · 合同5月31日到期</div>
     </div>
     <div class="house-list" id="houseList">
       <div class="empty-state" id="emptyState"><div class="icon">📝</div><p>还没记录任何房源<br>点击右下角 ＋ 添加第一套</p></div>
@@ -516,7 +516,7 @@ function renderCompare() {
   });
   if(sorted.length>=1){
     html+='<div class="compare-card"><h3>📊 费用一览</h3>';
-    html+='<div class="compare-row"><span class="label">🏢 绿地汇金楼（现在）</span><span class="val bad">4,160 元/月</span></div>';
+    html+='<div class="compare-row"><span class="label">🏢 绿地汇金楼 1305（现在）</span><span class="val bad">4,160 元/月</span></div>';
     sorted.forEach(function(h){var t=parseFloat(h.total)||0,s=t>0?CURRENT_COST-t:0;html+='<div class="compare-row"><span class="label">🔍 '+(h.name||'未命名')+'</span><span class="val '+(s>0?'good':(t>0?'bad':''))+'">'+(t>0?t.toLocaleString()+' 元':'\u2014')+'</span></div>';});
     html+='</div>';
   }
