@@ -470,30 +470,51 @@
         <div class="form-group-title">💰 费用明细</div>
         <div class="form-row">
           <label class="form-label">月租金（元）</label>
-          <input class="form-input" id="fRent" type="number" placeholder="2000">
+          <input class="form-input" id="fRent" type="number" placeholder="如：2000">
+        </div>
+        <div class="form-row">
+          <label class="form-label">面积（㎡）</label>
+          <input class="form-input" id="fArea" type="number" placeholder="如：45">
         </div>
         <div class="form-half">
           <div class="form-row">
-            <label class="form-label">服务费（元/月）</label>
-            <input class="form-input" id="fServiceFee" type="number" placeholder="0">
+            <label class="form-label">水费单价（元/吨）</label>
+            <input class="form-input" id="fWaterPrice" type="number" step="0.1" placeholder="如：5">
           </div>
           <div class="form-row">
-            <label class="form-label">物业费</label>
-            <input class="form-input" id="fPropFee" type="number" step="0.1" placeholder="0">
+            <label class="form-label">每月用水量（吨）</label>
+            <input class="form-input" id="fWaterUsage" type="number" step="0.1" placeholder="如：8">
           </div>
-        </div>
-        <div class="form-row" style="margin-top:-6px">
-          <label class="form-label" style="font-size:11px;color:#aaa">物业费单位：直接填月费（如210），或填单价（如3.5）</label>
         </div>
         <div class="form-half">
-          <div class="form-row">
-            <label class="form-label">每月水电费（元）</label>
-            <input class="form-input" id="fWaterElec" type="number" placeholder="如：400">
-          </div>
           <div class="form-row">
             <label class="form-label">电费单价（元/度）</label>
-            <input class="form-input" id="fElecPrice" type="number" step="0.01" placeholder="如：0.8">
+            <input class="form-input" id="fElecPrice" type="number" step="0.01" placeholder="如：0.6">
           </div>
+          <div class="form-row">
+            <label class="form-label">每月用电量（度）</label>
+            <input class="form-input" id="fElecUsage" type="number" placeholder="如：200">
+          </div>
+        </div>
+        <div class="form-half">
+          <div class="form-row">
+            <label class="form-label">物业费单价（元/㎡/月）</label>
+            <input class="form-input" id="fPropFee" type="number" step="0.1" placeholder="如：3.5">
+          </div>
+          <div class="form-row">
+            <label class="form-label">服务费（元/月）</label>
+            <input class="form-input" id="fServiceFee" type="number" placeholder="如：260">
+          </div>
+        </div>
+        <div class="form-row" style="background:#f0faf4;border-radius:8px;padding:12px;margin-top:8px">
+          <label class="form-label" style="color:#1a9c54;font-weight:700">📋 费用明细（自动计算）</label>
+          <div id="calcDetail" style="font-size:13px;color:#555;line-height:2;margin-top:4px">
+            填写上面数据后自动计算...
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:4px">
+          <label class="form-label">预估月总支出（元）</label>
+          <input class="form-input" id="fTotal" type="number" placeholder="= 房租 + 物业费 + 水费 + 电费 + 服务费" style="font-size:18px;font-weight:700;color:#e74c3c">
         </div>
         <div class="form-row">
           <label class="form-label">水电类型</label>
@@ -520,10 +541,6 @@
             <label class="form-label">中介费</label>
             <input class="form-input" id="fAgentFee" placeholder="如：无 / 半个月租">
           </div>
-        </div>
-        <div class="form-row">
-          <label class="form-label">预估月总支出（元）</label>
-          <input class="form-input" id="fTotal" type="number" placeholder="= 房租 + 服务费 + 物业费 + 水电费">
         </div>
       </div>
 
@@ -651,24 +668,41 @@
     // === 自动计算月总支出 ===
     function autoCalc() {
       const rent = parseFloat(document.getElementById('fRent').value) || 0;
-      const svc = parseFloat(document.getElementById('fServiceFee').value) || 0;
-      const propRaw = parseFloat(document.getElementById('fPropFee').value) || 0;
-      // 物业费：如果填的数字大于50，视为月费；否则视为元/㎡/月，乘以面积
       const area = parseFloat(document.getElementById('fArea').value) || 0;
-      let prop = propRaw;
-      if (propRaw > 0 && propRaw <= 50 && area > 0) {
-        prop = Math.round(propRaw * area);
+      const waterPrice = parseFloat(document.getElementById('fWaterPrice').value) || 0;
+      const waterUsage = parseFloat(document.getElementById('fWaterUsage').value) || 0;
+      const elecPrice = parseFloat(document.getElementById('fElecPrice').value) || 0;
+      const elecUsage = parseFloat(document.getElementById('fElecUsage').value) || 0;
+      const propUnit = parseFloat(document.getElementById('fPropFee').value) || 0;
+      const svc = parseFloat(document.getElementById('fServiceFee').value) || 0;
+
+      const waterCost = Math.round(waterPrice * waterUsage * 100) / 100;
+      const elecCost = Math.round(elecPrice * elecUsage * 100) / 100;
+      const propCost = Math.round(propUnit * area * 100) / 100;
+      const total = Math.round((rent + waterCost + elecCost + propCost + svc) * 100) / 100;
+
+      // 更新明细
+      const detail = document.getElementById('calcDetail');
+      let lines = [];
+      if (rent > 0) lines.push(`房租：${rent} 元`);
+      if (area > 0 && propUnit > 0) lines.push(`物业费：${propUnit} × ${area}㎡ = <strong>${propCost} 元</strong>`);
+      if (waterPrice > 0 && waterUsage > 0) lines.push(`水费：${waterPrice} × ${waterUsage}吨 = <strong>${waterCost} 元</strong>`);
+      if (elecPrice > 0 && elecUsage > 0) lines.push(`电费：${elecPrice} × ${elecUsage}度 = <strong>${elecCost} 元</strong>`);
+      if (svc > 0) lines.push(`服务费：${svc} 元`);
+      if (lines.length > 0) {
+        lines.push(`<br><span style="color:#e74c3c;font-weight:700;font-size:15px">合计：${total} 元/月</span>`);
+        detail.innerHTML = lines.join('<br>');
+      } else {
+        detail.innerHTML = '填写上面数据后自动计算...';
       }
-      // 水电费：直接用用户填的金额，不估算
-      const util = parseFloat(document.getElementById('fWaterElec').value) || 0;
-      const total = rent + svc + prop + util;
+
       const fTotal = document.getElementById('fTotal');
       if (!fTotal.value || fTotal.dataset.auto === '1') {
         fTotal.value = total || '';
         fTotal.dataset.auto = '1';
       }
     }
-    ['fRent', 'fServiceFee', 'fPropFee', 'fWaterElec', 'fArea'].forEach(id => {
+    ['fRent', 'fArea', 'fWaterPrice', 'fWaterUsage', 'fElecPrice', 'fElecUsage', 'fPropFee', 'fServiceFee'].forEach(id => {
       document.getElementById(id).addEventListener('input', autoCalc);
       document.getElementById(id).addEventListener('change', autoCalc);
     });
@@ -693,7 +727,9 @@
         document.getElementById('fRent').value = h.rent || '';
         document.getElementById('fUtility').value = h.utility || '';
         document.getElementById('fElecPrice').value = h.elecPrice || '';
-        document.getElementById('fWaterElec').value = h.waterElec || '';
+        document.getElementById('fWaterPrice').value = h.waterPrice || '';
+        document.getElementById('fWaterUsage').value = h.waterUsage || '';
+        document.getElementById('fElecUsage').value = h.elecUsage || '';
         document.getElementById('fServiceFee').value = h.serviceFee || '';
         document.getElementById('fPropFee').value = h.propFee || '';
         document.getElementById('fDeposit').value = h.deposit || '';
@@ -736,7 +772,9 @@
         rent: document.getElementById('fRent').value.trim(),
         utility: document.getElementById('fUtility').value,
         elecPrice: document.getElementById('fElecPrice').value.trim(),
-        waterElec: document.getElementById('fWaterElec').value.trim(),
+        waterPrice: document.getElementById('fWaterPrice').value.trim(),
+        waterUsage: document.getElementById('fWaterUsage').value.trim(),
+        elecUsage: document.getElementById('fElecUsage').value.trim(),
         serviceFee: document.getElementById('fServiceFee').value.trim(),
         propFee: document.getElementById('fPropFee').value.trim(),
         deposit: document.getElementById('fDeposit').value,
@@ -905,10 +943,10 @@
         const rows = [
           ['月租金', `${h.rent ? h.rent + ' 元' : '—'}`],
           ['水电类型', h.utility || '—', h.utility === '民水民电' ? 'good' : (h.utility === '商水商电' ? 'bad' : '')],
-          ['每月水电费', h.waterElec ? h.waterElec + ' 元' : '—'],
-          ['电费单价', h.elecPrice ? h.elecPrice + ' 元/度' : '—'],
+          ['电费', (h.elecPrice && h.elecUsage) ? h.elecPrice + '×' + h.elecUsage + '度=' + (Math.round(parseFloat(h.elecPrice)*parseFloat(h.elecUsage))) + '元' : (h.elecPrice ? h.elecPrice + ' 元/度' : '—')],
+          ['水费', (h.waterPrice && h.waterUsage) ? h.waterPrice + '×' + h.waterUsage + '吨=' + (Math.round(parseFloat(h.waterPrice)*parseFloat(h.waterUsage))) + '元' : (h.waterPrice ? h.waterPrice + ' 元/吨' : '—')],
+          ['物业费', (h.propFee && h.area) ? h.propFee + '×' + h.area + '㎡=' + (Math.round(parseFloat(h.propFee)*parseFloat(h.area))) + '元' : '—'],
           ['服务费', h.serviceFee ? h.serviceFee + ' 元/月' : '无'],
-          ['物业费', h.propFee ? h.propFee + ' 元/月' : '无'],
           ['预估月总支出', total > 0 ? total.toLocaleString() + ' 元' : '—'],
           ['距石溪站', h.distance || '—'],
           ['面积', h.area ? h.area + '㎡' : '—'],
