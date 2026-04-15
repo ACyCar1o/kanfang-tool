@@ -494,7 +494,29 @@ function deleteHouse(id) {
 
 // === 当前住所（基准）===
 var BASELINE_KEY = 'kanfang_baseline';
-var DEFAULT_BASELINE = {name:'绿地汇金楼 1305', roomNum:'', area:'60.74', type:'一室一厅', rent:'3300', serviceFee:'260', propFee:'3.45', waterPrice:'5.8', waterUsage:'2', elecPrice:'0.73', elecUsage:'425', utility:'商水商电', contractEnd:'5月31日', detail:''};
+var DEFAULT_BASELINE = {
+  name:'绿地汇金楼',
+  roomNum:'1305',
+  area:'60.74',
+  type:'一室一厅',
+  rent:'3300',
+  serviceFee:'260',
+  propFee:'3.45',
+  waterPrice:'5.8',
+  waterUsage:'2',
+  elecPrice:'0.73',
+  elecUsage:'425',
+  utility:'商水商电',
+  contractEnd:'5月31日到期',
+  floor:'',
+  direction:'',
+  deposit:'押二付一',
+  decor:'精装',
+  elevator:'有电梯',
+  appliance:'空调/冰箱/洗衣机/热水器',
+  contact:'',
+  note:''
+};
 function loadBaseline(){try{var d=JSON.parse(localStorage.getItem(BASELINE_KEY));return d&&d.name?d:DEFAULT_BASELINE;}catch(e){return DEFAULT_BASELINE;}}
 function saveBaselineLocal(b){localStorage.setItem(BASELINE_KEY,JSON.stringify(b));}
 function renderBaseline(){
@@ -737,7 +759,15 @@ document.querySelectorAll('#tab-checklist .check-item input[type="checkbox"]').f
 
 // === 初始化 ===
 function initCloud() {
-  if (!cloudEnabled) { renderList(); restoreChecks(); return; }
+  // 每次启动都重置 baseline 为最新默认值（确保修复旧数据问题）
+  var cur = localStorage.getItem(BASELINE_KEY);
+  var curObj = null;
+  try { curObj = JSON.parse(cur); } catch(e) {}
+  // 如果 baseline 缺少关键字段，用默认值覆盖
+  if (!curObj || !curObj.rent || curObj.rent === '0') {
+    saveBaselineLocal(DEFAULT_BASELINE);
+  }
+  if (!cloudEnabled) { renderBaseline(); restoreChecks(); return; }
   showSyncMsg('loading');
   cloudPull().then(function(cloudData) {
     if (cloudData && cloudData.houses) {
