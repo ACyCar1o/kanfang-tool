@@ -21,6 +21,8 @@
     .house-list{padding:12px}
     .house-card{background:#fff;border-radius:12px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.06);overflow:hidden;transition:opacity .3s}
     .house-card.status-rejected{opacity:.5}
+    .house-card.status-living{border-left:4px solid var(--red)}
+    .house-card.status-booked{border-left:4px solid var(--green)}
     .house-card-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer}
     .house-card-header .name{font-size:16px;font-weight:700}
     .house-card-header .price{font-size:22px;font-weight:800;color:var(--red)}
@@ -30,8 +32,10 @@
     .tag-green{background:var(--green-bg);color:#1a9c54}.tag-blue{background:var(--blue-bg);color:#2471a3}
     .tag-orange{background:var(--orange-bg);color:#b7950b}.tag-red{background:var(--red-bg);color:#c0392b}
     .tag-gray{background:var(--gray-bg);color:#777}
-    .tag-booked{background:#e8daef;color:#8e44ad}
-    .tag-rejected{background:#fdedec;color:#c0392b}
+    .tag-booked{background:#eafaf1;color:#1a9c54}
+    .tag-living{background:var(--red-bg);color:#c0392b}
+    .tag-rejected{background:var(--gray-bg);color:#777}
+    .tag-viewing{background:var(--blue-bg);color:#2471a3}
     .house-card-note{padding:10px 16px;font-size:13px;color:#666;border-top:1px solid #f0f0f0;line-height:1.6}
     .empty-state{text-align:center;padding:60px 20px;color:#bbb}.empty-state .icon{font-size:48px;margin-bottom:12px}.empty-state p{font-size:14px;margin-bottom:20px}
     .form-page{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#f0f2f5;z-index:200;overflow-y:auto}
@@ -82,8 +86,8 @@
     .card-sort-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:700;flex-shrink:0;margin-right:6px}
     .card-status-btns{display:flex;gap:6px;padding:6px 16px 12px}
     .card-status-btns button{border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+    .card-status-btns button.active-red{background:var(--red);color:#fff}
     .card-status-btns button.active-green{background:var(--green);color:#fff}
-    .card-status-btns button.active-purple{background:#8e44ad;color:#fff}
     .card-status-btns button.active-gray{background:#95a5a6;color:#fff}
     .card-status-btns button.inactive{background:#f0f0f0;color:#999}
   </style>
@@ -94,8 +98,9 @@
     <div class="sub">石溪地铁站 · 2026年5月搬迁 · ☁️ 云同步版</div>
     <div class="stats">
       <div class="stat-box"><span class="num" id="statCount">0</span>已看（套）</div>
-      <div class="stat-box"><span class="num" id="statBooked" style="color:#ffe0f0">0</span>已预定</div>
-      <div class="stat-box"><span class="num" id="statRejected" style="color:#ffcccc">0</span>不考虑</div>
+      <div class="stat-box"><span class="num" id="statLiving" style="color:#ffcccc">0</span>居住中</div>
+      <div class="stat-box"><span class="num" id="statBooked" style="color:#ccf0d9">0</span>已预定</div>
+      <div class="stat-box"><span class="num" id="statRejected" style="color:#ddd">0</span>不考虑</div>
     </div>
   </div>
   <div class="tabs">
@@ -167,7 +172,7 @@
         <div class="form-group-title">🏷️ 排序与状态</div>
         <div class="form-half">
           <div class="form-row"><label class="form-label">排序序号<span style="font-size:11px;color:#aaa;font-weight:400">（数字越小越靠前）</span></label><input class="form-input" id="fSortOrder" type="number" placeholder="自动" min="1"></div>
-          <div class="form-row"><label class="form-label">状态</label><select class="form-input" id="fStatus"><option value="viewing">🔍 看房中</option><option value="booked">✅ 已预定</option><option value="rejected">❌ 不考虑</option></select></div>
+          <div class="form-row"><label class="form-label">状态</label><select class="form-input" id="fStatus"><option value="viewing">🔍 考虑中</option><option value="living">🏠 居住中</option><option value="booked">✅ 已预定</option><option value="rejected">❌ 不考虑</option></select></div>
         </div>
       </div>
       <div class="form-group">
@@ -483,9 +488,10 @@ function renderList() {
     return (b.updatedAt||'').localeCompare(a.updatedAt||'');
   });
   // 统计
-  var totalCount=houses.length, bookedCount=0, rejectedCount=0;
-  houses.forEach(function(h){ if(h.status==='booked') bookedCount++; if(h.status==='rejected') rejectedCount++; });
+  var totalCount=houses.length, bookedCount=0, rejectedCount=0, livingCount=0;
+  houses.forEach(function(h){ if(h.status==='booked') bookedCount++; if(h.status==='rejected') rejectedCount++; if(h.status==='living') livingCount++; });
   document.getElementById('statCount').textContent=totalCount;
+  document.getElementById('statLiving').textContent=livingCount;
   document.getElementById('statBooked').textContent=bookedCount;
   document.getElementById('statRejected').textContent=rejectedCount;
   if(totalCount===0){empty.style.display='block';container.querySelectorAll('.house-card').forEach(function(el){el.remove()});return;}
@@ -493,7 +499,7 @@ function renderList() {
   container.querySelectorAll('.house-card').forEach(function(el){el.remove()});
   houses.forEach(function(h, idx){
     var card=document.createElement('div');
-    var statusClass = h.status==='rejected' ? ' status-rejected' : '';
+    var statusClass = h.status==='rejected' ? ' status-rejected' : (h.status==='living' ? ' status-living' : (h.status==='booked' ? ' status-booked' : ''));
     card.className='house-card' + statusClass;
     var total=parseFloat(h.total)||0;
     var est=calcEstimated(h);
@@ -510,9 +516,10 @@ function renderList() {
     else if(est.total>0 && total>0) estLine='（系统估算 ~'+est.total.toLocaleString()+' 元）';
     // 状态标签
     var statusTag='';
-    if(h.status==='booked') statusTag='<span class="tag tag-booked">✅ 已预定</span>';
+    if(h.status==='living') statusTag='<span class="tag tag-living">🏠 居住中</span>';
+    else if(h.status==='booked') statusTag='<span class="tag tag-booked">✅ 已预定</span>';
     else if(h.status==='rejected') statusTag='<span class="tag tag-rejected">❌ 不考虑</span>';
-    else statusTag='<span class="tag tag-blue">🔍 看房中</span>';
+    else statusTag='<span class="tag tag-viewing">🔍 考虑中</span>';
     // 其他标签
     var tags=statusTag;
     if(h.utility==='民水民电')tags+='<span class="tag tag-green">民水民电</span>';
@@ -537,10 +544,12 @@ function renderList() {
 
     // 状态按钮（快速切换）
     var btnClassV = h.status==='viewing' ? ' active-green' : ' inactive';
-    var btnClassB = h.status==='booked' ? ' active-purple' : ' inactive';
+    var btnClassL = h.status==='living' ? ' active-red' : ' inactive';
+    var btnClassB = h.status==='booked' ? ' active-green' : ' inactive';
     var btnClassR = h.status==='rejected' ? ' active-gray' : ' inactive';
     var statusBtns = '<div class="card-status-btns">'
-      +'<button class="'+btnClassV+'" onclick="setStatus(\''+h.id+'\',\'viewing\')">🔍 看房中</button>'
+      +'<button class="'+btnClassV+'" onclick="setStatus(\''+h.id+'\',\'viewing\')">🔍 考虑中</button>'
+      +'<button class="'+btnClassL+'" onclick="setStatus(\''+h.id+'\',\'living\')">🏠 居住中</button>'
       +'<button class="'+btnClassB+'" onclick="setStatus(\''+h.id+'\',\'booked\')">✅ 预定</button>'
       +'<button class="'+btnClassR+'" onclick="setStatus(\''+h.id+'\',\'rejected\')">❌ 不考虑</button>'
       +'</div>';
@@ -564,8 +573,8 @@ function renderCompare() {
   // 过滤掉不考虑的
   var active=houses.filter(function(h){return h.status!=='rejected';});
   if(active.length<2){container.innerHTML='<div class="empty-state"><div class="icon">📊</div><p>至少添加 2 套「看房中」或「已预定」的房源才能对比<br>标记为"不考虑"的房源已自动排除</p></div>';return;}
-  // 按月总支出排序
-  var sorted=active.slice().sort(function(x,y){return(parseFloat(x.total)||99999)-(parseFloat(y.total)||99999)});
+  // 按排序序号排列
+  var sorted=active.slice().sort(function(x,y){return(parseInt(x.sortOrder)||999)-(parseInt(y.sortOrder)||999)});
   var html='';
   // 最低价提示
   var cheapest=sorted[0];
@@ -595,7 +604,7 @@ function renderCompare() {
     ['租期', function(h){return h.leaseTerm||'—';}, 'info'],
     ['距石溪站', function(h){return h.distance||'—';}, 'info'],
     ['评分', function(h){return h.score?'⭐'+h.score+'/10':'—';}, 'score'],
-    ['状态', function(h){return h.status==='booked'?'✅ 已预定':(h.status==='viewing'?'🔍 看房中':'—');}, 'info']
+    ['状态', function(h){return h.status==='living'?'🏠 居住中':(h.status==='booked'?'✅ 已预定':(h.status==='viewing'?'🔍 考虑中':'❌ 不考虑'));}, 'info']
   ];
   compareRows.forEach(function(row,i){
     var type=row[2]||'info';
