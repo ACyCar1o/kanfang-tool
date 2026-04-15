@@ -224,6 +224,7 @@
 
 <script>
 var CURRENT_COST = 4160;
+var BASELINE_EDIT_MODE = false; // 标记当前是否在编辑当前住所
 var STORAGE_KEY = 'kanfang_houses';
 var CHECK_KEY = 'kanfang_checks';
 var SETUP_KEY = 'kanfang_setup';
@@ -369,6 +370,7 @@ document.getElementById('fTotal').addEventListener('input',function(){this.datas
 var formFields = ['fName','fRoomNum','fArea','fType','fFloor','fDirection','fDistance','fRent','fUtility','fElecPrice','fWaterPrice','fWaterUsage','fElecUsage','fServiceFee','fPropFee','fDeposit','fAgentFee','fTotal','fDecor','fElevator','fAppliance','fLeaseTerm','fScore','fContact','fVisitDate','fPros','fCons','fNote'];
 
 function openForm(id) {
+  BASELINE_EDIT_MODE = false;
   var houses = loadData();
   if (id) {
     var h = houses.find(function(x){return x.id===id});
@@ -418,7 +420,7 @@ function openForm(id) {
   // 延迟触发一次计算，确保费用明细显示
   setTimeout(autoCalc, 50);
 }
-function closeForm() { document.getElementById('formPage').classList.remove('show'); document.getElementById('fabAdd').style.display='flex'; }
+function closeForm() { document.getElementById('formPage').classList.remove('show'); document.getElementById('fabAdd').style.display='flex'; BASELINE_EDIT_MODE=false; }
 
 function saveHouse() {
   var houses=loadData(), editId=document.getElementById('editId').value;
@@ -455,34 +457,37 @@ function saveHouse() {
     updatedAt:new Date().toLocaleString('zh-CN')
   };
   if(!data.name&&!data.rent){showToast('至少填写小区名或月租金');return;}
-  // 编辑当前住所
-  if(editId==='__baseline__'){
+  // 编辑当前住所（通过全局标记判断，不依赖隐藏字段 editId）
+  if(BASELINE_EDIT_MODE){
+    BASELINE_EDIT_MODE = false; // 重置标记
     var old=loadBaseline();
+    if(!old||!old.name){old=DEFAULT_BASELINE;}
     var bl={};
-    // 只继承 baseline 需要的字段，排除 house 特有字段
     var blKeys=['name','roomNum','area','type','rent','waterPrice','waterUsage','elecPrice','elecUsage','propFee','serviceFee','utility','contractEnd'];
     blKeys.forEach(function(k){ bl[k]=old[k]||''; });
-    // 用表单值覆盖（只覆盖有值的字段）
+    // 用表单值覆盖
     if(data.name) bl.name=data.name;
-    if(data.roomNum!==undefined&&data.roomNum!=='') bl.roomNum=data.roomNum;
+    if(data.roomNum!==''&&data.roomNum!==undefined) bl.roomNum=data.roomNum;
     if(data.area) bl.area=data.area;
     if(data.type) bl.type=data.type;
     if(data.rent) bl.rent=data.rent;
-    if(data.waterPrice!==undefined&&data.waterPrice!=='') bl.waterPrice=data.waterPrice;
-    if(data.waterUsage!==undefined&&data.waterUsage!=='') bl.waterUsage=data.waterUsage;
-    if(data.elecPrice!==undefined&&data.elecPrice!=='') bl.elecPrice=data.elecPrice;
-    if(data.elecUsage!==undefined&&data.elecUsage!=='') bl.elecUsage=data.elecUsage;
-    if(data.propFee!==undefined&&data.propFee!=='') bl.propFee=data.propFee;
-    if(data.serviceFee!==undefined&&data.serviceFee!=='') bl.serviceFee=data.serviceFee;
+    if(data.waterPrice!==''&&data.waterPrice!==undefined) bl.waterPrice=data.waterPrice;
+    if(data.waterUsage!==''&&data.waterUsage!==undefined) bl.waterUsage=data.waterUsage;
+    if(data.elecPrice!==''&&data.elecPrice!==undefined) bl.elecPrice=data.elecPrice;
+    if(data.elecUsage!==''&&data.elecUsage!==undefined) bl.elecUsage=data.elecUsage;
+    if(data.propFee!==''&&data.propFee!==undefined) bl.propFee=data.propFee;
+    if(data.serviceFee!==''&&data.serviceFee!==undefined) bl.serviceFee=data.serviceFee;
     if(data.utility) bl.utility=data.utility;
-    // 合同到期日从备注字段取
     if(data.note) bl.contractEnd=data.note;
     var checks=loadChecks();
+    // 先存本地，立即生效
     saveBaselineLocal(bl);
     renderBaseline();
+    // 再推云端
     var blForCloud=JSON.parse(JSON.stringify(bl));
     syncSave(houses,checks,blForCloud).then(function(){
-      closeForm();renderList();
+      closeForm();
+      renderList();
       document.getElementById('compareContent').innerHTML='';
       showToast('当前住所已更新');
     });
@@ -533,6 +538,7 @@ function renderBaseline(){
   }
 }
 function editBaseline(){
+  BASELINE_EDIT_MODE = true; // 标记进入 baseline 编辑模式
   var b=loadBaseline();
   document.getElementById('formTitle').textContent='编辑当前住所';
   document.getElementById('editId').value='__baseline__';
